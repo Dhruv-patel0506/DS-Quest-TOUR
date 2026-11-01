@@ -1,0 +1,183 @@
+{
+ "free": [
+  "eda",
+  "evals",
+  "matplotlib",
+  "numpy",
+  "pandas",
+  "python",
+  "respai",
+  "sql",
+  "uncertainty"
+ ],
+ "premium": [],
+ "notebooks": [],
+ "files": [
+  {
+   "f": "m00_python.js",
+   "modules": [
+    "python"
+   ],
+   "paid": false
+  },
+  {
+   "f": "m00a_python_start.js",
+   "modules": [
+    "python"
+   ],
+   "paid": false
+  },
+  {
+   "f": "m00b_python_project.js",
+   "modules": [
+    "python"
+   ],
+   "paid": false
+  },
+  {
+   "f": "m00d_python_sheet.js",
+   "modules": [
+    "python"
+   ],
+   "paid": false
+  },
+  {
+   "f": "m01_numpy.js",
+   "modules": [
+    "numpy"
+   ],
+   "paid": false
+  },
+  {
+   "f": "m01b_numpy_project.js",
+   "modules": [
+    "numpy"
+   ],
+   "paid": false
+  },
+  {
+   "f": "m01c_numpy_products.js",
+   "modules": [
+    "numpy"
+   ],
+   "paid": false
+  },
+  {
+   "f": "m01d_numpy_sheet.js",
+   "modules": [
+    "numpy"
+   ],
+   "paid": false
+  },
+  {
+   "f": "m02_pandas.js",
+   "modules": [
+    "pandas"
+   ],
+   "paid": false
+  },
+  {
+   "f": "m02b_pandas_project.js",
+   "modules": [
+    "pandas"
+   ],
+   "paid": false
+  },
+  {
+   "f": "m02c_pandas_sql.js",
+   "modules": [
+    "pandas"
+   ],
+   "paid": false
+  },
+  {
+   "f": "m02d_pandas_sheet.js",
+   "modules": [
+    "pandas"
+   ],
+   "paid": false
+  },
+  {
+   "f": "m03_matplotlib.js",
+   "modules": [
+    "matplotlib"
+   ],
+   "paid": false
+  },
+  {
+   "f": "m03b_matplotlib_project.js",
+   "modules": [
+    "matplotlib"
+   ],
+   "paid": false
+  },
+  {
+   "f": "m03c_matplotlib_animation.js",
+   "modules": [
+    "matplotlib"
+   ],
+   "paid": false
+  },
+  {
+   "f": "m03d_matplotlib_sheet.js",
+   "modules": [
+    "matplotlib"
+   ],
+   "paid": false
+  },
+  {
+   "f": "m04_eda.js",
+   "modules": [
+    "eda"
+   ],
+   "paid": false
+  },
+  {
+   "f": "m04d_eda_sheet.js",
+   "modules": [
+    "eda"
+   ],
+   "paid": false
+  },
+  {
+   "f": "m17_sql.js",
+   "modules": [
+    "sql"
+   ],
+   "paid": false
+  },
+  {
+   "f": "m17b_sql_sheet.js",
+   "modules": [
+    "sql"
+   ],
+   "paid": false
+  },
+  {
+   "f": "m23c_torch_shim.js",
+   "modules": [],
+   "paid": false
+  },
+  {
+   "f": "m34_evals.js",
+   "modules": [
+    "evals"
+   ],
+   "paid": false
+  },
+  {
+   "f": "m39_respai.js",
+   "modules": [
+    "respai"
+   ],
+   "paid": false
+  },
+  {
+   "f": "m41_uncertainty.js",
+   "modules": [
+    "uncertainty"
+   ],
+   "paid": false
+  }
+ ]
+}

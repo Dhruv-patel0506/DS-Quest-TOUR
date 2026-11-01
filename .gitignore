@@ -1,0 +1,7 @@
+data/
+workspace/
+node_modules/
+.vercel/
+*.log
+.env*
+.dsq-showcase

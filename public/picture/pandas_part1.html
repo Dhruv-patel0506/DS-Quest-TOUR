@@ -1,0 +1,741 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pandas Picture Class</title>
+<style>
+:root{
+  --bg:#f6f4ee; --panel:#ffffff; --ink:#1f2430; --muted:#5e6575; --line:#e3ded2;
+  --accent:#e8a317; --accent-ink:#5a3d00; --accent-soft:#fff3d4;
+  --blue:#2f6fde; --blue-soft:#e3ecfd; --green:#1e8f5a; --green-soft:#dcf3e7;
+  --red:#d2453b; --red-soft:#fde4e1; --purple:#7a4cc2; --purple-soft:#eee6fa;
+  --code-bg:#1e2230; --code-ink:#e9ecf3; --code-key:#ffcf66; --code-str:#9ee59e; --code-num:#8fc3ff; --code-com:#8a93a8;
+  --shadow:0 2px 10px rgba(30,30,40,.07);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#15171d; --panel:#1e2129; --ink:#eceef3; --muted:#a2a9b8; --line:#30343f;
+    --accent:#f2b53a; --accent-ink:#ffe2a3; --accent-soft:#3a2f17;
+    --blue:#6d9cff; --blue-soft:#1e2a45; --green:#4cc58a; --green-soft:#183427;
+    --red:#ff7b70; --red-soft:#3e1f1d; --purple:#b393f0; --purple-soft:#2c2440;
+    --code-bg:#0f1117; --shadow:0 2px 10px rgba(0,0,0,.35);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#15171d; --panel:#1e2129; --ink:#eceef3; --muted:#a2a9b8; --line:#30343f;
+  --accent:#f2b53a; --accent-ink:#ffe2a3; --accent-soft:#3a2f17;
+  --blue:#6d9cff; --blue-soft:#1e2a45; --green:#4cc58a; --green-soft:#183427;
+  --red:#ff7b70; --red-soft:#3e1f1d; --purple:#b393f0; --purple-soft:#2c2440;
+  --code-bg:#0f1117; --shadow:0 2px 10px rgba(0,0,0,.35);
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:16px/1.55 "Segoe UI",system-ui,-apple-system,Roboto,sans-serif}
+button{font:inherit;cursor:pointer}
+code,pre,.mono{font-family:Consolas,"Cascadia Code","SF Mono",Menlo,monospace}
+
+.app{display:grid;grid-template-columns:270px 1fr;min-height:100vh}
+aside{background:var(--panel);border-right:1px solid var(--line);padding:20px 14px;position:sticky;top:0;height:100vh;overflow:auto}
+.brand{display:flex;align-items:center;gap:10px;margin:0 6px 18px}
+.brand .logo{font-size:30px}
+.brand h1{font-size:18px;margin:0;line-height:1.2}
+.brand small{color:var(--muted);font-size:13px}
+.toc{list-style:none;margin:0;padding:0}
+.toc button{width:100%;text-align:left;background:none;border:0;color:var(--ink);padding:9px 10px;border-radius:10px;display:flex;gap:10px;align-items:center;font-size:15px}
+.toc button:hover{background:var(--accent-soft)}
+.toc button.active{background:var(--accent);color:#2a1d00;font-weight:600}
+.toc .num{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;background:var(--bg);font-size:12px;flex:none;border:1px solid var(--line)}
+.toc button.active .num{background:#fff6;border-color:transparent}
+.toc .sec{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;padding:14px 10px 4px}
+.toc .done .num{background:var(--green);color:#fff;border-color:transparent}
+.side-foot{margin-top:18px;padding:0 8px;display:flex;gap:8px;flex-wrap:wrap}
+.chip{border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:999px;padding:5px 12px;font-size:13px}
+
+main{padding:28px 32px 60px;max-width:1150px;width:100%}
+.lesson-head{display:flex;align-items:flex-start;gap:16px;margin-bottom:14px}
+.lesson-head .big{font-size:44px;line-height:1}
+.lesson-head h2{margin:0;font-size:28px}
+.lesson-head p{margin:4px 0 0;color:var(--muted);max-width:70ch}
+.story{background:var(--accent-soft);border:1px dashed var(--accent);color:var(--ink);border-radius:14px;padding:12px 16px;margin:10px 0 20px;max-width:80ch}
+.story b{color:var(--accent-ink)}
+
+.stage{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);gap:20px;align-items:start}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);padding:16px}
+.code-card{padding:0;overflow:hidden}
+.code-top{display:flex;align-items:center;gap:6px;padding:10px 14px;background:var(--code-bg);border-bottom:1px solid #ffffff14}
+.dot{width:11px;height:11px;border-radius:50%}
+.code-top .lbl{margin-left:8px;color:var(--code-com);font-size:13px}
+.code-top .copy{margin-left:auto;background:#ffffff14;color:var(--code-ink);border:0;border-radius:8px;padding:3px 10px;font-size:12px}
+pre.code{margin:0;background:var(--code-bg);color:var(--code-ink);padding:16px 18px;min-height:120px;font-size:15px;white-space:pre-wrap;word-break:break-word}
+.tk-k{color:var(--code-key)} .tk-s{color:var(--code-str)} .tk-n{color:var(--code-num)} .tk-c{color:var(--code-com);font-style:italic}
+.caret{display:inline-block;width:8px;height:1.1em;background:var(--accent);vertical-align:text-bottom;animation:blink .8s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+
+.teacher{display:flex;gap:12px;padding:14px 16px;align-items:flex-start}
+.teacher .face{font-size:34px;line-height:1}
+.bubble{background:var(--blue-soft);border-radius:4px 14px 14px 14px;padding:10px 14px;flex:1;animation:pop .35s ease}
+.bubble b{color:var(--blue)}
+
+.controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:14px}
+.btn{border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:10px;padding:8px 14px;font-weight:600}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);color:#2a1d00;border-color:var(--accent)}
+.btn:disabled{opacity:.4;cursor:default}
+.steps-dots{display:flex;gap:6px;margin-left:auto}
+.steps-dots span{width:10px;height:10px;border-radius:50%;background:var(--line);transition:.3s}
+.steps-dots span.on{background:var(--accent);transform:scale(1.25)}
+.steps-dots span.seen{background:var(--accent);opacity:.45}
+
+.board{min-height:340px;display:flex;flex-direction:column;gap:14px}
+.board-title{font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;font-weight:600}
+.tables{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.arrow{font-size:28px;color:var(--accent);animation:nudge 1s ease-in-out infinite}
+@keyframes nudge{50%{transform:translateX(5px)}}
+.tbl-wrap{overflow-x:auto;max-width:100%}
+.tbl-cap{font-size:13px;color:var(--muted);margin:0 0 6px;font-weight:600}
+table.df{border-collapse:separate;border-spacing:0;font-size:14.5px;background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+table.df th,table.df td{padding:7px 12px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap;transition:background .4s,color .4s,opacity .4s}
+table.df thead th{background:var(--bg);font-weight:700}
+table.df tbody th{background:var(--bg);color:var(--muted);font-weight:600;text-align:center;min-width:36px}
+table.df tr:last-child td,table.df tr:last-child th{border-bottom:0}
+td.num{text-align:right;font-variant-numeric:tabular-nums}
+.hl{background:var(--accent-soft)!important;box-shadow:inset 0 0 0 2px var(--accent);animation:pulse 1.2s ease 2}
+th.hl{color:var(--accent-ink)!important}
+@keyframes pulse{50%{box-shadow:inset 0 0 0 3px var(--accent)}}
+.hl-idx{background:var(--purple-soft)!important;color:var(--purple)!important;box-shadow:inset 0 0 0 2px var(--purple)}
+.hl-head{background:var(--blue-soft)!important;color:var(--blue)!important;box-shadow:inset 0 0 0 2px var(--blue)}
+tr.dim td,tr.dim th{opacity:.18;text-decoration:line-through}
+.new{animation:grow .6s ease both;background:var(--green-soft)!important;color:var(--green)}
+@keyframes grow{from{opacity:0;transform:scale(.6)}to{opacity:1;transform:none}}
+.gone{background:var(--red-soft)!important;color:var(--red)!important;text-decoration:line-through;animation:shake .5s ease 2}
+@keyframes shake{25%{transform:translateX(-3px)}75%{transform:translateX(3px)}}
+.nan{background:var(--red-soft)!important;color:var(--red)!important;font-style:italic;font-weight:600}
+.fixed{background:var(--green-soft)!important;color:var(--green)!important;font-weight:700;animation:grow .6s ease both}
+.t{color:var(--green);font-weight:700} .f{color:var(--red);font-weight:700}
+.g1{background:#2f6fde22!important} .g2{background:#e8a31726!important} .g3{background:#1e8f5a24!important}
+.legend{display:flex;gap:10px;flex-wrap:wrap;font-size:13px}
+.legend span{padding:2px 10px;border-radius:999px}
+
+.out{background:var(--code-bg);color:var(--code-ink);border-radius:12px;padding:12px 14px;font-size:14px;white-space:pre;overflow-x:auto;animation:pop .4s ease}
+.out:before{content:"Output ▸";display:block;color:var(--code-com);font-size:11px;margin-bottom:4px;letter-spacing:.06em}
+@keyframes pop{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+.dict{display:flex;gap:12px;flex-wrap:wrap}
+.box{border:2px solid var(--blue);border-radius:12px;padding:8px 12px;background:var(--blue-soft);animation:grow .5s ease both}
+.box .k{font-weight:700;color:var(--blue);margin-bottom:4px}
+.box .v{display:flex;gap:6px;flex-wrap:wrap}
+.box .v span{background:var(--panel);border-radius:6px;padding:1px 8px;font-size:14px}
+.file{border:2px solid var(--green);background:var(--green-soft);border-radius:4px 22px 12px 12px;padding:10px 14px;min-width:200px;animation:grow .5s ease both}
+.file .fname{font-weight:700;color:var(--green);margin-bottom:6px}
+.file pre{margin:0;font-size:13.5px;white-space:pre}
+.file pre span{display:block;animation:pop .4s ease both}
+.ready{font-size:22px;padding:30px;text-align:center;animation:grow .5s ease both}
+.ready .em{font-size:60px;display:block}
+.tip{border-left:4px solid var(--purple);background:var(--purple-soft);padding:8px 12px;border-radius:0 10px 10px 0;font-size:14.5px;animation:pop .4s ease}
+
+.quiz{margin-top:26px}
+.quiz h3{margin:0 0 6px}
+.opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px;margin-top:10px}
+.opt{text-align:left;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:10px;padding:10px 12px}
+.opt.right{background:var(--green-soft);border-color:var(--green)}
+.opt.wrong{background:var(--red-soft);border-color:var(--red)}
+.feedback{margin-top:10px;font-weight:600}
+.remember{margin-top:20px}
+.remember ul{margin:6px 0 0;padding-left:20px}
+.remember code{background:var(--bg);padding:1px 6px;border-radius:5px;border:1px solid var(--line)}
+.nav-bottom{display:flex;justify-content:space-between;margin-top:26px;gap:10px}
+
+.menu-btn{display:none}
+@media (max-width:900px){
+  .app{grid-template-columns:1fr}
+  aside{position:fixed;inset:0 30% 0 0;z-index:5;transform:translateX(-105%);transition:.3s;height:100vh}
+  aside.open{transform:none}
+  .menu-btn{display:inline-block;margin-bottom:12px}
+  main{padding:16px 16px 50px}
+  .stage{grid-template-columns:1fr}
+  .lesson-head h2{font-size:23px}
+  .steps-dots{margin-left:0;width:100%}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside id="side">
+    <div class="brand"><span class="logo">🐼</span><div><h1>Pandas Picture Class</h1><small>Learn by watching tables move</small></div></div>
+    <ul class="toc" id="toc"></ul>
+    <div class="side-foot">
+      <button class="chip" id="themeBtn">🌓 Theme</button>
+      <button class="chip" id="resetBtn">↺ Reset progress</button>
+    </div>
+  </aside>
+  <main id="main"></main>
+</div>
+
+<script>
+/* ---------- our sample class data ---------- */
+const COLS = ["Name","Age","City","Marks"];
+const ROWS = [
+  ["Aarav",15,"Delhi",85],
+  ["Diya",14,"Mumbai",92],
+  ["Rohan",16,"Delhi",78],
+  ["Isha",15,"Pune",88],
+  ["Kabir",14,"Mumbai",65]
+];
+const copy = r => r.map(x => x.slice());
+const range = n => [...Array(n).keys()];
+
+/* T() makes a picture-table. Options: idx, hlCols, hlRows, dimRows, cells{"r,c":cls}, newCols, goneCols, newRows, goneRows, rowCls, hlIdx, hlHead, cap */
+function T(cols, rows, o = {}) { return Object.assign({cols, rows, idx: range(rows.length)}, o); }
+
+/* ---------- the 9 lessons (from your topic list) ---------- */
+const LESSONS = [
+{
+  title:"Create DataFrame", icon:"🧱",
+  sub:"Make your very first table in pandas.",
+  story:"A <b>DataFrame</b> is just a <b>table</b> — like the marks register your class teacher keeps. It has <b>rows</b> (one per student) and <b>columns</b> (Name, Age, Marks…).",
+  steps:[
+    {code:`import pandas as pd`,
+     say:"First we <b>bring pandas</b> into Python. <b>pd</b> is its short nickname, so we don't have to type 'pandas' every time.",
+     board:()=>({html:`<div class="ready"><span class="em">🐼</span>pandas is ready!</div>`})},
+    {code:`data = {
+    "Name":  ["Aarav", "Diya", "Rohan"],
+    "Marks": [85, 92, 78]
+}`,
+     say:"A <b>dictionary</b> is like labelled boxes. The <b>label</b> (key) becomes the <b>column name</b>, and the <b>list</b> inside becomes that column's values.",
+     board:()=>({html:`<div class="dict"><div class="box"><div class="k">"Name"</div><div class="v"><span>Aarav</span><span>Diya</span><span>Rohan</span></div></div><div class="box" style="animation-delay:.25s"><div class="k">"Marks"</div><div class="v"><span>85</span><span>92</span><span>78</span></div></div></div>`})},
+    {code:`df = pd.DataFrame(data)
+df`,
+     say:"<b>pd.DataFrame()</b> turns the boxes into a table! Each box stands up as a column. We save it in a variable called <b>df</b>.",
+     board:()=>({tables:[T(["Name","Marks"],[["Aarav",85],["Diya",92],["Rohan",78]],{newCols:["Name","Marks"]})]})},
+    {code:`df.index     # row labels
+df.columns   # column names`,
+     say:"Look at the <b style='color:var(--purple)'>purple numbers</b> on the left — that's the <b>index</b> (row numbers). pandas starts counting from <b>0</b>, not 1! The <b style='color:var(--blue)'>blue</b> top row has the <b>column names</b>.",
+     board:()=>({tables:[T(["Name","Marks"],[["Aarav",85],["Diya",92],["Rohan",78]],{hlIdx:true,hlHead:true})],
+       out:`RangeIndex(start=0, stop=3, step=1)\nIndex(['Name', 'Marks'], dtype='str')`})},
+    {code:`rows = [["Isha", 88], ["Kabir", 65]]
+df2 = pd.DataFrame(rows, columns=["Name", "Marks"])`,
+     say:"Another way: give a <b>list of rows</b> (each inner list = one student) and tell pandas the <b>column names</b>.",
+     board:()=>({tables:[T(["Name","Marks"],[["Isha",88],["Kabir",65]],{newRows:[0,1]})]})},
+  ],
+  quiz:{q:"In a DataFrame, what does the index start counting from?",opts:["1","0","A","It has no index"],a:1,why:"pandas (and Python) count from 0, so the first row is row 0."},
+  remember:["<code>import pandas as pd</code> — bring pandas in","<code>pd.DataFrame(dict)</code> — keys become columns","<code>pd.DataFrame(list, columns=[...])</code> — list of rows","Index = row labels, starts at 0"]
+},
+{
+  title:"Basic DataFrame Understanding", icon:"🔍",
+  sub:"Peek at your table and learn about it quickly.",
+  story:"Before working with any table, a good student <b>looks at it first</b>: How many rows? What columns? What kind of values? pandas has small commands for each question.",
+  steps:[
+    {code:`df`, say:"Here is our full class table. <b>5 students</b>, <b>4 columns</b>. We'll use this table in the next lessons too.",
+     board:()=>({tables:[T(COLS,ROWS,{newRows:range(5)})]})},
+    {code:`df.head(3)`, say:"<b>head(n)</b> shows the <b>first n rows</b> from the top. Without a number it shows 5. Great for a quick peek at big tables!",
+     board:()=>({tables:[T(COLS,ROWS,{hlRows:[0,1,2],dimRows:[3,4]})]})},
+    {code:`df.tail(2)`, say:"<b>tail(n)</b> shows the <b>last n rows</b> — from the bottom.",
+     board:()=>({tables:[T(COLS,ROWS,{hlRows:[3,4],dimRows:[0,1,2]})]})},
+    {code:`df.shape`, say:"<b>shape</b> tells the size as <b>(rows, columns)</b>. No brackets () after shape — it's a fact about the table, not an action.",
+     board:()=>({tables:[T(COLS,ROWS,{hlIdx:true,hlHead:true})],out:`(5, 4)`})},
+    {code:`df.dtypes`, say:"<b>dtypes</b> tells the <b>type</b> of each column. <b>int64</b> = whole numbers, <b>str/object</b> = text.",
+     board:()=>({tables:[T(COLS,ROWS,{hlHead:true})],out:`Name       str\nAge      int64\nCity       str\nMarks    int64`})},
+    {code:`df.info()`, say:"<b>info()</b> is a full report card: rows, columns, how many values are filled (non-null), and types.",
+     board:()=>({out:`<class 'pandas.DataFrame'>\nRangeIndex: 5 entries, 0 to 4\nData columns (total 4 columns):\n #   Column  Non-Null Count  Dtype\n---  ------  --------------  -----\n 0   Name    5 non-null      str\n 1   Age     5 non-null      int64\n 2   City    5 non-null      str\n 3   Marks   5 non-null      int64`})},
+    {code:`df.describe()`, say:"<b>describe()</b> does quick maths on the <b>number columns</b>: count, average (mean), smallest (min), biggest (max) and more.",
+     board:()=>({tables:[T(COLS,ROWS,{hlCols:["Age","Marks"]}),
+       T(["Age","Marks"],[[5,5],[14.8,81.6],[14,65],[16,92]],{idx:["count","mean","min","max"],newCols:["Age","Marks"],cap:"describe() (some rows hidden)"})]})},
+  ],
+  quiz:{q:"df.shape gives (5, 4). What does 4 mean?",opts:["4 rows","4 columns","4 missing values","4 students"],a:1,why:"shape is always (rows, columns). So 5 rows and 4 columns."},
+  remember:["<code>head()</code> / <code>tail()</code> — top / bottom rows","<code>shape</code> — (rows, columns)","<code>dtypes</code>, <code>info()</code> — types & filled values","<code>describe()</code> — quick maths summary"]
+},
+{
+  title:"Save and Load CSV", icon:"💾",
+  sub:"Save your table to a file and open it again.",
+  story:"A <b>CSV</b> file (Comma Separated Values) is a simple text file. Each line is one row, and values are separated by <b>commas</b>. Excel and Google Sheets can open it too!",
+  steps:[
+    {code:`df.to_csv("students.csv", index=False)`,
+     say:"<b>to_csv()</b> <b>saves</b> the table into a file. <b>index=False</b> means \"don't save the row numbers\" — we usually don't need them.",
+     board:()=>({tables:[T(COLS,ROWS)],arrow:true,file:{name:"📄 students.csv",lines:["Name,Age,City,Marks",...ROWS.map(r=>r.join(","))]}})},
+    {code:`df.to_csv("students_with_index.csv")`,
+     say:"If you <b>forget index=False</b>, pandas also writes the index as an extra first column. See the extra numbers? That's usually not wanted.",
+     board:()=>({file:{name:"📄 students_with_index.csv",lines:[",Name,Age,City,Marks",...ROWS.map((r,i)=>i+","+r.join(","))],bad:true},
+       tip:"Tip: almost always write <b>index=False</b> when saving."})},
+    {code:`df2 = pd.read_csv("students.csv")`,
+     say:"<b>read_csv()</b> <b>opens</b> a CSV file and turns it back into a DataFrame. The first line becomes the column names.",
+     board:()=>({file:{name:"📄 students.csv",lines:["Name,Age,City,Marks",...ROWS.map(r=>r.join(","))]},arrow:true,tables:[T(COLS,ROWS,{newRows:range(5)})],fileFirst:true})},
+    {code:`df2 = pd.read_csv("students.csv", usecols=["Name", "Marks"])`,
+     say:"Only need some columns? Use <b>usecols</b> to load just those. Faster for big files!",
+     board:()=>({tables:[T(["Name","Marks"],ROWS.map(r=>[r[0],r[3]]),{newCols:["Name","Marks"]})]})},
+  ],
+  quiz:{q:"Which command OPENS a CSV file?",opts:["df.to_csv()","pd.read_csv()","pd.open()","df.load()"],a:1,why:"read = open/load, to_csv = save."},
+  remember:["<code>df.to_csv(\"file.csv\", index=False)</code> — save","<code>pd.read_csv(\"file.csv\")</code> — load","<code>usecols=[...]</code> — load only some columns"]
+},
+{
+  title:"Rows & Columns – Selection", icon:"🎯",
+  sub:"Pick exactly the rows, columns or cells you want.",
+  story:"Think of the table like a <b>cinema seat chart</b>. To find a seat you say the <b>row</b> and the <b>seat number</b>. pandas has <b>loc</b> (use names/labels) and <b>iloc</b> (use position numbers).",
+  steps:[
+    {code:`df["Name"]`, say:"Square brackets with a column name picks <b>one column</b>. The answer is called a <b>Series</b> (a single column).",
+     board:()=>({tables:[T(COLS,ROWS,{hlCols:["Name"]})]})},
+    {code:`df[["Name", "Marks"]]`, say:"For <b>many columns</b>, put a <b>list</b> inside — that's why there are <b>double brackets [[ ]]</b>.",
+     board:()=>({tables:[T(COLS,ROWS,{hlCols:["Name","Marks"]})]})},
+    {code:`df.loc[1]`, say:"<b>loc[row label]</b> picks a whole <b>row</b>. Row label 1 is Diya.",
+     board:()=>({tables:[T(COLS,ROWS,{hlRows:[1]})]})},
+    {code:`df.loc[1, "City"]`, say:"<b>loc[row, column]</b> picks <b>one cell</b> — like a seat number! Row 1, column City.",
+     board:()=>({tables:[T(COLS,ROWS,{cells:{"1,2":"hl"}})],out:`'Mumbai'`})},
+    {code:`df.loc[0:2, ["Name", "Age"]]`, say:"With <b>loc</b>, the range <b>0:2 includes 2</b>! So rows 0, 1 and 2 — and only Name and Age.",
+     board:()=>({tables:[T(COLS,ROWS,{cells:Object.fromEntries([0,1,2].flatMap(r=>[[`${r},0`,"hl"],[`${r},1`,"hl"]])),dimRows:[3,4]})]})},
+    {code:`df.iloc[0:2]`, say:"<b>iloc</b> uses <b>positions</b>, like Python lists. Here <b>0:2 stops before 2</b>, so only rows 0 and 1.",
+     board:()=>({tables:[T(COLS,ROWS,{hlRows:[0,1],dimRows:[2,3,4]})],tip:"Remember: <b>loc</b> includes the end, <b>iloc</b> excludes the end."})},
+    {code:`df.iloc[-1, 0]`, say:"<b>-1</b> means <b>the last one</b>. Last row, first column → Kabir.",
+     board:()=>({tables:[T(COLS,ROWS,{cells:{"4,0":"hl"}})],out:`'Kabir'`})},
+  ],
+  quiz:{q:"df.iloc[0:3] gives how many rows?",opts:["2","3","4","All"],a:1,why:"iloc stops before the end number: rows 0, 1, 2 → 3 rows."},
+  remember:["<code>df[\"col\"]</code> — one column","<code>df[[\"a\",\"b\"]]</code> — many columns","<code>df.loc[row, col]</code> — by label (end included)","<code>df.iloc[row, col]</code> — by position (end excluded)"]
+},
+{
+  title:"Filter DataFrame", icon:"🧹",
+  sub:"Keep only the rows that match a rule.",
+  story:"Filtering is like a teacher saying: <b>\"Only students who scored more than 80, stand up!\"</b> pandas checks every row with <b>True / False</b> and keeps the True ones.",
+  steps:[
+    {code:`df["Marks"] > 80`, say:"First pandas asks the question for <b>every row</b>. Each answer is <b class='t'>True</b> or <b class='f'>False</b>.",
+     board:()=>{const r=ROWS.map(x=>[...x,x[3]>80]);return {tables:[T([...COLS,"Marks > 80?"],r,{newCols:["Marks > 80?"]})]}}},
+    {code:`df[df["Marks"] > 80]`, say:"Put that question <b>inside df[ ]</b> and pandas keeps only the <b class='t'>True</b> rows. Rohan and Kabir go away.",
+     board:()=>({tables:[T(COLS,ROWS,{dimRows:[2,4],hlCols:["Marks"]})]})},
+    {code:`df[df["City"] == "Delhi"]`, say:"Use <b>==</b> (double equals) to check if something is <b>equal</b>. Single = is for giving a value, == is for asking.",
+     board:()=>({tables:[T(COLS,ROWS,{dimRows:[1,3,4],hlCols:["City"]})]})},
+    {code:`df[(df["City"] == "Mumbai") & (df["Marks"] > 70)]`, say:"<b>&</b> means <b>AND</b> — both rules must be true. Put each rule in <b>( )</b> brackets. Only Diya passes both!",
+     board:()=>({tables:[T(COLS,ROWS,{dimRows:[0,2,3,4]})]})},
+    {code:`df[(df["Age"] == 16) | (df["Marks"] > 90)]`, say:"<b>|</b> means <b>OR</b> — at least one rule must be true. Rohan is 16, Diya scored 92.",
+     board:()=>({tables:[T(COLS,ROWS,{dimRows:[0,3,4]})]})},
+    {code:`df[df["City"].isin(["Pune", "Delhi"])]`, say:"<b>isin([...])</b> checks if the value is <b>in a list</b>. Easier than writing many ORs!",
+     board:()=>({tables:[T(COLS,ROWS,{dimRows:[1,4],hlCols:["City"]})]})},
+  ],
+  quiz:{q:"Which symbol means AND in a pandas filter?",opts:["and","&&","&","+"],a:2,why:"pandas uses & for AND and | for OR, with each rule inside ( )."},
+  remember:["<code>df[df[\"Marks\"] > 80]</code> — keep matching rows","<code>==</code> equal, <code>!=</code> not equal","<code>&</code> AND, <code>|</code> OR — use ( ) around each rule","<code>.isin([...])</code> — value in a list"]
+},
+{
+  title:"Rows & Columns – Add, Update, Delete", icon:"✏️",
+  sub:"Change your table: add new things, fix values, remove things.",
+  story:"Your table is like a <b>notebook in pencil</b> — you can <b>add</b> new columns or rows, <b>erase and rewrite</b> a value, or <b>remove</b> whole rows and columns.",
+  steps:[
+    {code:`df["Passed"] = df["Marks"] >= 70`, say:"<b>Add a column</b>: just write a new column name and give it values. Here pandas checks marks ≥ 70 for each student.",
+     board:()=>({tables:[T([...COLS,"Passed"],ROWS.map(r=>[...r,r[3]>=70]),{newCols:["Passed"]})]})},
+    {code:`df["Bonus"] = df["Marks"] + 5`, say:"New column from maths! Everyone gets <b>+5 bonus</b> marks. pandas does it for all rows at once.",
+     board:()=>({tables:[T([...COLS,"Passed","Bonus"],ROWS.map(r=>[...r,r[3]>=70,r[3]+5]),{newCols:["Bonus"]})]})},
+    {code:`df.loc[2, "Marks"] = 80`, say:"<b>Update one value</b>: point at the cell with loc and give it a new value. Rohan's 78 becomes <b>80</b>.",
+     board:()=>{const r=ROWS.map(x=>[...x,x[3]>=70,x[3]+5]);r[2][3]=80;return {tables:[T([...COLS,"Passed","Bonus"],r,{cells:{"2,3":"fixed"}})]}}},
+    {code:`df = df.drop(columns=["Bonus"])`, say:"<b>Delete a column</b> with <b>drop(columns=[...])</b>. We save the result back into df.",
+     board:()=>{const r=ROWS.map(x=>[...x,x[3]>=70,x[3]+5]);r[2][3]=80;return {tables:[T([...COLS,"Passed","Bonus"],r,{goneCols:["Bonus"]})]}}},
+    {code:`df.loc[5] = ["Meera", 15, "Pune", 90, True]`, say:"<b>Add a row</b>: use a new row label (5) with loc and give values for every column in order.",
+     board:()=>{const r=ROWS.map(x=>[...x,x[3]>=70]);r[2][3]=80;r.push(["Meera",15,"Pune",90,true]);return {tables:[T([...COLS,"Passed"],r,{newRows:[5]})]}}},
+    {code:`df = df.drop(index=[2])`, say:"<b>Delete a row</b> with <b>drop(index=[...])</b>. Row 2 (Rohan) is removed.",
+     board:()=>{const r=ROWS.map(x=>[...x,x[3]>=70]);r[2][3]=80;r.push(["Meera",15,"Pune",90,true]);return {tables:[T([...COLS,"Passed"],r,{goneRows:[2]})]}}},
+    {code:`df = df.rename(columns={"Marks": "Score"})`, say:"<b>Rename</b> a column with a small dictionary: <b>{old name: new name}</b>.",
+     board:()=>{const r=ROWS.map(x=>[...x,x[3]>=70]);r[2][3]=80;r.push(["Meera",15,"Pune",90,true]);r.splice(2,1);return {tables:[T(["Name","Age","City","Score","Passed"],r,{idx:[0,1,3,4,5],hlCols:["Score"]})],tip:"Notice the index is now 0, 1, 3, 4, 5. Use <b>df.reset_index(drop=True)</b> to renumber it."}}},
+  ],
+  quiz:{q:"How do you remove the column 'Bonus'?",opts:["df.remove('Bonus')","df.drop(columns=['Bonus'])","del df.Bonus()","df.delete('Bonus')"],a:1,why:"drop(columns=[...]) removes columns; drop(index=[...]) removes rows."},
+  remember:["<code>df[\"new\"] = ...</code> — add column","<code>df.loc[row, col] = value</code> — update","<code>df.loc[new_label] = [...]</code> — add row","<code>drop(columns=[..])</code> / <code>drop(index=[..])</code> — delete","<code>rename(columns={old: new})</code>"]
+},
+{
+  title:"Working with Dates", icon:"📅",
+  sub:"Turn date text into real dates and use them.",
+  story:"\"2024-01-15\" looks like a date to us, but pandas first sees it as <b>plain text</b>. Once we convert it to a <b>real date</b>, pandas can tell the year, month, day — and even count days between dates!",
+  steps:[
+    {code:`df["Joined"] = ["2024-01-15", "2024-03-02", "2023-11-20",
+                "2024-06-10", "2023-08-05"]
+df["Joined"].dtype`, say:"We add a <b>Joined</b> column (the date each student joined the club). Right now it's just <b>text</b>.",
+     board:()=>({tables:[T(["Name","Joined"],DATES.map((d,i)=>[ROWS[i][0],d]),{newCols:["Joined"]})],out:`str   ← just text 😕`})},
+    {code:`df["Joined"] = pd.to_datetime(df["Joined"])`, say:"<b>pd.to_datetime()</b> converts the text into <b>real dates</b>. Now the type is <b>datetime64</b>.",
+     board:()=>({tables:[T(["Name","Joined"],DATES.map((d,i)=>[ROWS[i][0],d]),{hlCols:["Joined"]})],out:`datetime64[ns]   ← real dates 🎉`})},
+    {code:`df["Year"] = df["Joined"].dt.year`, say:"<b>.dt</b> opens the date toolbox. <b>.dt.year</b> pulls out just the year.",
+     board:()=>({tables:[T(["Name","Joined","Year"],DATES.map((d,i)=>[ROWS[i][0],d,+d.slice(0,4)]),{newCols:["Year"]})]})},
+    {code:`df["Month"] = df["Joined"].dt.month_name()`, say:"<b>.dt.month_name()</b> gives the month's name. Also try <b>.dt.month</b> (number) and <b>.dt.day</b>.",
+     board:()=>({tables:[T(["Name","Joined","Year","Month"],DATES.map((d,i)=>[ROWS[i][0],d,+d.slice(0,4),MONTHS[i]]),{newCols:["Month"]})]})},
+    {code:`df[df["Joined"] >= "2024-01-01"]`, say:"Filter by date! Keep only students who joined <b>in 2024 or later</b>.",
+     board:()=>({tables:[T(["Name","Joined","Year","Month"],DATES.map((d,i)=>[ROWS[i][0],d,+d.slice(0,4),MONTHS[i]]),{dimRows:[2,4],hlCols:["Joined"]})]})},
+    {code:`end = pd.Timestamp("2024-12-31")
+df["Days"] = (end - df["Joined"]).dt.days`, say:"Subtract dates to get the <b>gap</b>. <b>.dt.days</b> turns the gap into a number of days.",
+     board:()=>({tables:[T(["Name","Joined","Days"],DATES.map((d,i)=>[ROWS[i][0],d,DAYS[i]]),{newCols:["Days"]})]})},
+  ],
+  quiz:{q:"Which command turns date text into real dates?",opts:["pd.to_date()","pd.to_datetime()","df.date()","str.date()"],a:1,why:"pd.to_datetime() converts text like '2024-01-15' into real dates."},
+  remember:["<code>pd.to_datetime(col)</code> — text → date","<code>.dt.year</code>, <code>.dt.month</code>, <code>.dt.day</code>, <code>.dt.month_name()</code>","Filter: <code>df[df[\"Joined\"] >= \"2024-01-01\"]</code>","<code>(date1 - date2).dt.days</code> — gap in days"]
+},
+{
+  title:"Handling Missing Values", icon:"🕳️",
+  sub:"Find empty cells and fix them.",
+  story:"Sometimes data has <b>empty spots</b> — a student was absent, or someone forgot to write the city. pandas shows these as <b style='color:var(--red)'>NaN</b> (Not a Number). We can <b>find</b> them, <b>remove</b> them, or <b>fill</b> them.",
+  steps:[
+    {code:`import numpy as np
+df = pd.DataFrame({
+    "Name":  ["Aarav", "Diya", "Rohan", "Isha", "Kabir"],
+    "Age":   [15, 14, np.nan, 15, 14],
+    "City":  ["Delhi", "Mumbai", "Delhi", np.nan, "Mumbai"],
+    "Marks": [85, 92, 78, 88, np.nan]
+})`, say:"Here is a table with some <b>empty spots</b> (we wrote <b>np.nan</b> for them). The <b style='color:var(--red)'>red</b> cells are missing.",
+     board:()=>({tables:[T(COLS,MISS,{cells:NANC})]})},
+    {code:`df.isnull()`, say:"<b>isnull()</b> checks every cell: <b class='t'>True</b> = missing, <b class='f'>False</b> = filled.",
+     board:()=>({tables:[T(COLS,MISS.map(r=>r.map(v=>v==="NaN")),{cells:NANC})]})},
+    {code:`df.isnull().sum()`, say:"Add <b>.sum()</b> to <b>count</b> missing values in each column. (True counts as 1.)",
+     board:()=>({tables:[T(COLS,MISS,{cells:NANC})],out:`Name     0\nAge      1\nCity     1\nMarks    1`})},
+    {code:`df.dropna()`, say:"<b>dropna()</b> removes <b>any row</b> that has a missing value. Simple — but we lose 3 students! Use it carefully.",
+     board:()=>({tables:[T(COLS,MISS,{cells:NANC,dimRows:[2,3,4]})]})},
+    {code:`df["Marks"] = df["Marks"].fillna(df["Marks"].mean())`, say:"Better idea: <b>fill</b> the empty spot. For Marks we use the <b>average</b> of the others: (85+92+78+88)÷4 = <b>85.75</b>.",
+     board:()=>{const m=copy(MISS);m[4][3]=85.75;return {tables:[T(COLS,m,{cells:{"2,1":"nan","3,2":"nan","4,3":"fixed"}})]}}},
+    {code:`df["City"] = df["City"].fillna("Unknown")
+df["Age"] = df["Age"].fillna(df["Age"].median())`, say:"Text columns can be filled with a word like <b>\"Unknown\"</b>. For Age we use the <b>median</b> (middle value) = <b>14.5</b>.",
+     board:()=>{const m=copy(MISS);m[4][3]=85.75;m[3][2]="Unknown";m[2][1]=14.5;return {tables:[T(COLS,m,{cells:{"2,1":"fixed","3,2":"fixed"}})],out:`No missing values left! ✅`}}},
+  ],
+  quiz:{q:"What does df.isnull().sum() tell you?",opts:["Total of all marks","Number of missing values in each column","Number of rows","Deletes empty cells"],a:1,why:"isnull() gives True for missing cells and sum() counts the Trues for each column."},
+  remember:["<code>NaN</code> = missing value","<code>isnull()</code> / <code>isnull().sum()</code> — find & count","<code>dropna()</code> — remove rows with missing","<code>fillna(value)</code> — fill with mean, median, or a word"]
+},
+{
+  title:"Aggregation and Group By", icon:"📊",
+  sub:"Summarise many rows into a few answers.",
+  story:"<b>Aggregation</b> = squeeze many numbers into one answer (total, average, max). <b>Group by</b> = first make <b>groups</b> (like students sitting by city), then find the answer <b>for each group</b>.",
+  steps:[
+    {code:`df.loc[5] = ["Meera", 15, "Pune", 90]
+df["Marks"].sum()`, say:"We add Meera so each city has 2 students. <b>sum()</b> adds all marks into one number.",
+     board:()=>({tables:[T(COLS,G,{hlCols:["Marks"],newRows:[5]})],out:`498`})},
+    {code:`df["Marks"].mean()   # average
+df["Marks"].max()    # biggest
+df["Marks"].count()  # how many`, say:"Other helpers: <b>mean</b> (average), <b>max</b>, <b>min</b>, <b>count</b>. Each one squeezes the column into one answer.",
+     board:()=>({tables:[T(COLS,G,{hlCols:["Marks"]})],out:`83.0\n92\n6`})},
+    {code:`df.groupby("City")`, say:"<b>groupby(\"City\")</b> puts students into <b>groups</b> by their city. Same colour = same group.",
+     board:()=>({tables:[T(COLS,G,{rowCls:GC})],legend:true})},
+    {code:`# pandas (in its head) puts each group together`, say:"Think of it like students <b>moving to sit with their city friends</b>. Delhi together, Mumbai together, Pune together.",
+     board:()=>{const o=[0,2,1,4,3,5];return {tables:[T(COLS,o.map(i=>G[i]),{idx:o,rowCls:Object.fromEntries(o.map((g,k)=>[k,GC[g]])),newRows:range(6)})],legend:true}}},
+    {code:`df.groupby("City")["Marks"].mean()`, say:"Now find the <b>average marks for each city</b>. Each coloured group becomes <b>one row</b> in the answer!",
+     board:()=>{const o=[0,2,1,4,3,5];return {tables:[T(["City","Marks"],o.map(i=>[G[i][2],G[i][3]]),{idx:o,rowCls:Object.fromEntries(o.map((g,k)=>[k,GC[g]]))}),
+       T(["Marks"],[[81.5],[78.5],[89.0]],{idx:["Delhi","Mumbai","Pune"],rowCls:{0:"g1",1:"g2",2:"g3"},newRows:[0,1,2],cap:"mean of each group"})],arrow:true}}},
+    {code:`df.groupby("City")["Marks"].agg(["mean", "max", "count"])`, say:"<b>agg([...])</b> lets you ask <b>many questions at once</b>.",
+     board:()=>({tables:[T(["mean","max","count"],[[81.5,85,2],[78.5,92,2],[89.0,90,2]],{idx:["Delhi","Mumbai","Pune"],rowCls:{0:"g1",1:"g2",2:"g3"},newCols:["mean","max","count"]})]})},
+    {code:`result = df.groupby("City").agg(
+    avg_marks=("Marks", "mean"),
+    oldest=("Age", "max")
+).reset_index()
+result.sort_values("avg_marks", ascending=False)`, say:"Give your answers <b>nice names</b>, use <b>reset_index()</b> to make City a normal column, and <b>sort</b> from best to lowest. Pune wins! 🏆",
+     board:()=>({tables:[T(["City","avg_marks","oldest"],[["Pune",89.0,15],["Delhi",81.5,16],["Mumbai",78.5,14]],{idx:[2,0,1],rowCls:{0:"g3",1:"g1",2:"g2"},newRows:[0,1,2]})]})},
+  ],
+  quiz:{q:"What does df.groupby('City')['Marks'].mean() give?",opts:["Average of all marks","Average marks for each city","Number of cities","Highest marks"],a:1,why:"groupby makes one group per city, then mean() gives one average per group."},
+  remember:["<code>sum()</code>, <code>mean()</code>, <code>max()</code>, <code>min()</code>, <code>count()</code> — aggregation","<code>df.groupby(\"col\")[\"num\"].mean()</code> — per group","<code>.agg([...])</code> — many answers at once","<code>reset_index()</code>, <code>sort_values()</code> — tidy result"]
+},
+{
+  bonus:true, title:"Sorting and Ranking", icon:"🔢",
+  sub:"Put rows in order — smallest to biggest, A to Z, or best to lowest.",
+  story:"Sorting is like the PE teacher saying <b>\"Stand in a line from shortest to tallest!\"</b> pandas moves the whole row together, so nobody's marks get mixed up.",
+  steps:[
+    {code:`df.sort_values("Marks")`, say:"<b>sort_values(\"Marks\")</b> sorts from <b>smallest to biggest</b>. Look — the index numbers move with their rows!",
+     board:()=>{const o=[4,2,0,3,1];return {tables:[T(COLS,o.map(i=>ROWS[i]),{idx:o,hlCols:["Marks"],newRows:range(5)})]}}},
+    {code:`df.sort_values("Marks", ascending=False)`, say:"<b>ascending=False</b> flips it: <b>biggest first</b>. Diya is on top with 92!",
+     board:()=>{const o=[1,3,0,2,4];return {tables:[T(COLS,o.map(i=>ROWS[i]),{idx:o,hlCols:["Marks"],newRows:range(5)})]}}},
+    {code:`df.sort_values(["City", "Marks"], ascending=[True, False])`, say:"Sort by <b>two columns</b>: first City A→Z, then <b>inside each city</b> Marks from high to low.",
+     board:()=>{const o=[0,2,1,4,3];return {tables:[T(COLS,o.map(i=>ROWS[i]),{idx:o,hlCols:["City","Marks"],rowCls:Object.fromEntries(o.map((g,k)=>[k,GC[g]])),newRows:range(5)})]}}},
+    {code:`df.nlargest(3, "Marks")`, say:"<b>nlargest(3, ...)</b> is a shortcut for the <b>top 3</b>. (There is also <b>nsmallest</b> for the bottom.)",
+     board:()=>{const o=[1,3,0];return {tables:[T(COLS,o.map(i=>ROWS[i]),{idx:o,newRows:range(3),cap:"🥇 🥈 🥉"})]}}},
+    {code:`df["Rank"] = df["Marks"].rank(ascending=False)`, say:"<b>rank()</b> gives each student a <b>position number</b> without moving rows. 1 = best.",
+     board:()=>({tables:[T([...COLS,"Rank"],ROWS.map((r,i)=>[...r,[3,1,4,2,5][i]]),{newCols:["Rank"]})],tip:"pandas shows ranks as 1.0, 2.0… — they are decimal numbers."})},
+    {code:`df.sort_index()`, say:"Want the old order back? <b>sort_index()</b> sorts by the index numbers again.",
+     board:()=>({tables:[T(COLS,ROWS,{hlIdx:true})]})},
+  ],
+  quiz:{q:"How do you sort Marks from highest to lowest?",opts:["sort_values('Marks')","sort_values('Marks', ascending=False)","sort('Marks', down=True)","Marks.reverse()"],a:1,why:"ascending=False means biggest first."},
+  remember:["<code>sort_values(\"col\")</code> — small → big","<code>ascending=False</code> — big → small","<code>nlargest(n, \"col\")</code> / <code>nsmallest()</code> — top / bottom n","<code>rank()</code>, <code>sort_index()</code>"]
+},
+{
+  bonus:true, title:"Text Columns (.str)", icon:"🔤",
+  sub:"Change and search words in a column.",
+  story:"Real data is often <b>messy</b>: \" delhi\", \"DELHI\", \"Delhi \" are the same city written 3 ways! The <b>.str</b> toolbox helps you clean and check text in <b>every row at once</b>.",
+  steps:[
+    {code:`df["Name"].str.upper()`, say:"<b>.str</b> opens the text toolbox. <b>upper()</b> makes every letter CAPITAL. Try <b>lower()</b> too!",
+     board:()=>({tables:[T(["Name","Name.upper()"],ROWS.map(r=>[r[0],r[0].toUpperCase()]),{newCols:["Name.upper()"]})]})},
+    {code:`df["Name"].str.len()`, say:"<b>len()</b> counts the <b>letters</b> in each name.",
+     board:()=>({tables:[T(["Name","Letters"],ROWS.map(r=>[r[0],r[0].length]),{newCols:["Letters"]})]})},
+    {code:`df[df["Name"].str.contains("i")]`, say:"<b>contains(\"i\")</b> finds names that have the letter <b>i</b> inside. Careful: it's <b>case-sensitive</b> — \"Isha\" has a capital I, so it's not picked!",
+     board:()=>({tables:[T(COLS,ROWS,{dimRows:[0,2,3],hlCols:["Name"]})]})},
+    {code:`df["Code"] = df["City"].str[:3]`, say:"<b>str[:3]</b> takes the <b>first 3 letters</b>, like a short code.",
+     board:()=>({tables:[T(["Name","City","Code"],ROWS.map(r=>[r[0],r[2],r[2].slice(0,3)]),{newCols:["Code"]})]})},
+    {code:`messy = pd.Series([" delhi", "MUMBAI ", "Delhi", " pune", "mumbai"])
+messy.str.strip().str.title()`, say:"Cleaning messy text: <b>strip()</b> removes extra spaces, <b>title()</b> makes First Letter Capital. Now they all match!",
+     board:()=>({tables:[T(["messy"],[[`" delhi"`],[`"MUMBAI "`],[`"Delhi"`],[`" pune"`],[`"mumbai"`]],{cells:{"0,0":"nan","1,0":"nan","3,0":"nan","4,0":"nan"}}),
+       T(["clean"],[["Delhi"],["Mumbai"],["Delhi"],["Pune"],["Mumbai"]],{newCols:["clean"]})],arrow:true})},
+  ],
+  quiz:{q:"Which removes extra spaces at the start and end of text?",opts:[".str.upper()",".str.strip()",".str.len()",".str.cut()"],a:1,why:"strip() trims spaces from both ends."},
+  remember:["<code>.str.upper()</code> / <code>.lower()</code> / <code>.title()</code>","<code>.str.len()</code> — count letters","<code>.str.contains(\"x\")</code> — search (case-sensitive)","<code>.str[:3]</code> — first letters","<code>.str.strip()</code> — remove extra spaces"]
+},
+{
+  bonus:true, title:"apply and map", icon:"🪄",
+  sub:"Use your own rule on every value in a column.",
+  story:"Sometimes pandas doesn't have a ready command for what you want — like giving <b>grades</b>. So you write a small <b>function</b> (your rule), and <b>apply</b> runs it on <b>every row</b> for you.",
+  steps:[
+    {code:`def grade(m):
+    if m >= 85:
+        return "A"
+    elif m >= 70:
+        return "B"
+    else:
+        return "C"`, say:"First we write our <b>rule</b> as a function: 85 or more → A, 70 or more → B, otherwise → C.",
+     board:()=>({html:`<div class="dict"><div class="box"><div class="k">m ≥ 85</div><div class="v"><span>A</span></div></div><div class="box" style="animation-delay:.2s"><div class="k">m ≥ 70</div><div class="v"><span>B</span></div></div><div class="box" style="animation-delay:.4s"><div class="k">else</div><div class="v"><span>C</span></div></div></div>`})},
+    {code:`df["Grade"] = df["Marks"].apply(grade)`, say:"<b>apply(grade)</b> sends each mark into our function and collects the answers in a new column.",
+     board:()=>({tables:[T([...COLS,"Grade"],ROWS.map(r=>[...r,r[3]>=85?"A":r[3]>=70?"B":"C"]),{newCols:["Grade"],hlCols:["Marks"]})]})},
+    {code:`df["Out of 10"] = df["Marks"].apply(lambda m: m / 10)`, say:"For a tiny rule, use <b>lambda</b> — a one-line function without a name. Here: divide every mark by 10.",
+     board:()=>({tables:[T(["Name","Marks","Out of 10"],ROWS.map(r=>[r[0],r[3],r[3]/10]),{newCols:["Out of 10"]})],tip:"For simple maths, <b>df[\"Marks\"] / 10</b> also works and is faster!"})},
+    {code:`states = {"Delhi": "Delhi", "Mumbai": "Maharashtra", "Pune": "Maharashtra"}
+df["State"] = df["City"].map(states)`, say:"<b>map(dictionary)</b> is like a <b>lookup table</b>: find each city in the dictionary and write its state.",
+     board:()=>({tables:[T(["Name","City","State"],ROWS.map(r=>[r[0],r[2],r[2]==="Delhi"?"Delhi":"Maharashtra"]),{newCols:["State"],hlCols:["City"]})]})},
+  ],
+  quiz:{q:"df['Marks'].apply(grade) runs the grade function on…",opts:["Only the first mark","Every mark, one by one","The column name","Nothing — it needs a loop"],a:1,why:"apply runs your function on every value and gives back all the answers."},
+  remember:["<code>col.apply(func)</code> — your rule on every value","<code>lambda x: ...</code> — tiny one-line function","<code>col.map({old: new})</code> — lookup with a dictionary"]
+},
+{
+  bonus:true, title:"Combine Tables", icon:"🧩",
+  sub:"Join two tables together — stack them or match them.",
+  story:"Two ways to combine: <b>concat</b> = <b>stack</b> tables like putting two pages together (Class A list + Class B list). <b>merge</b> = <b>match</b> rows using a common column, like matching students to their hobbies by name.",
+  steps:[
+    {code:`classA = pd.DataFrame({"Name": ["Aarav", "Diya"], "Marks": [85, 92]})
+classB = pd.DataFrame({"Name": ["Rohan", "Isha"], "Marks": [78, 88]})`, say:"Two small tables with the <b>same columns</b>. Notice both start their index at 0.",
+     board:()=>({tables:[T(["Name","Marks"],[["Aarav",85],["Diya",92]],{cap:"classA",rowCls:{0:"g1",1:"g1"}}),T(["Name","Marks"],[["Rohan",78],["Isha",88]],{cap:"classB",rowCls:{0:"g3",1:"g3"}})]})},
+    {code:`pd.concat([classA, classB])`, say:"<b>concat</b> stacks them <b>one below the other</b>. But the index is now 0, 1, 0, 1 — repeated!",
+     board:()=>({tables:[T(["Name","Marks"],[["Aarav",85],["Diya",92],["Rohan",78],["Isha",88]],{idx:[0,1,0,1],hlIdx:true,rowCls:{0:"g1",1:"g1",2:"g3",3:"g3"},newRows:[2,3]})]})},
+    {code:`pd.concat([classA, classB], ignore_index=True)`, say:"<b>ignore_index=True</b> gives fresh row numbers 0, 1, 2, 3. 👍",
+     board:()=>({tables:[T(["Name","Marks"],[["Aarav",85],["Diya",92],["Rohan",78],["Isha",88]],{hlIdx:true,rowCls:{0:"g1",1:"g1",2:"g3",3:"g3"}})]})},
+    {code:`hobby = pd.DataFrame({
+    "Name":  ["Aarav", "Diya", "Isha", "Zoya"],
+    "Hobby": ["Cricket", "Dance", "Chess", "Music"]
+})`, say:"Now a <b>different</b> table: hobbies. Both tables have a <b>Name</b> column — that's our matching key. (Zoya isn't in our class!)",
+     board:()=>({tables:[T(["Name","City"],ROWS.map(r=>[r[0],r[2]]),{cap:"df",hlCols:["Name"]}),T(["Name","Hobby"],HOBBY,{cap:"hobby",hlCols:["Name"]})]})},
+    {code:`pd.merge(df, hobby, on="Name")`, say:"<b>merge on=\"Name\"</b> keeps only names found in <b>both</b> tables. Rohan, Kabir and Zoya have no match, so they're left out.",
+     board:()=>({tables:[T(["Name","City","Hobby"],[["Aarav","Delhi","Cricket"],["Diya","Mumbai","Dance"],["Isha","Pune","Chess"]],{newCols:["Hobby"]})]})},
+    {code:`pd.merge(df, hobby, on="Name", how="left")`, say:"<b>how=\"left\"</b> keeps <b>every row of the left table</b> (df). No hobby found? You get <b style='color:var(--red)'>NaN</b>.",
+     board:()=>({tables:[T(["Name","City","Hobby"],[["Aarav","Delhi","Cricket"],["Diya","Mumbai","Dance"],["Rohan","Delhi","NaN"],["Isha","Pune","Chess"],["Kabir","Mumbai","NaN"]],{newCols:["Hobby"]})]})},
+  ],
+  quiz:{q:"You want to put Class A and Class B lists one below the other. Use…",opts:["pd.merge()","pd.concat()","df.groupby()","df.apply()"],a:1,why:"concat stacks tables; merge matches rows using a common column."},
+  remember:["<code>pd.concat([a, b], ignore_index=True)</code> — stack","<code>pd.merge(a, b, on=\"col\")</code> — match (only common rows)","<code>how=\"left\"</code> — keep all left rows (missing → NaN)"]
+}
+];
+const HOBBY = [["Aarav","Cricket"],["Diya","Dance"],["Isha","Chess"],["Zoya","Music"]];
+
+/* final test: mixed questions from every topic */
+const TEST = [
+  {q:"What is a DataFrame?",opts:["A chart","A table with rows and columns","A Python loop","A CSV file"],a:1},
+  {q:"df.shape gives (8, 3). How many rows?",opts:["3","8","11","24"],a:1},
+  {q:"Which line saves without the row numbers?",opts:["df.to_csv('a.csv')","df.to_csv('a.csv', index=False)","pd.read_csv('a.csv')","df.save('a.csv')"],a:1},
+  {q:"df.loc[0:2] gives how many rows?",opts:["2","3","1","0"],a:1},
+  {q:"Keep students from Pune:",opts:["df['City'] = 'Pune'","df[df['City'] == 'Pune']","df.loc['Pune']","df.filter('Pune')"],a:1},
+  {q:"Add a column 'Total' = Marks + 5:",opts:["df.add('Total')","df['Total'] = df['Marks'] + 5","df.Total(5)","df.insert(Marks+5)"],a:1},
+  {q:"After pd.to_datetime, how do you get the year?",opts:["df['D'].year","df['D'].dt.year","df['D'].str.year","year(df['D'])"],a:1},
+  {q:"NaN means…",opts:["Not a Name","A missing value","Zero","An error in Python"],a:1},
+  {q:"Average marks for each city:",opts:["df['Marks'].mean()","df.groupby('City')['Marks'].mean()","df.mean('City')","df.sort_values('City')"],a:1},
+  {q:"Which keeps only rows found in BOTH tables?",opts:["pd.concat([a, b])","pd.merge(a, b, on='Name')","pd.merge(a, b, on='Name', how='left')","a + b"],a:1},
+];
+/* shuffle the right answer's position so it is not always option B */
+TEST.forEach((t,i)=>{const s=i%4;if(s===1)return;const right=t.opts[t.a];t.opts.splice(t.a,1);t.opts.splice(s,0,right);t.a=s;});
+
+/* extra data used by lessons 7-9 */
+const DATES = ["2024-01-15","2024-03-02","2023-11-20","2024-06-10","2023-08-05"];
+const MONTHS = ["January","March","November","June","August"];
+const DAYS = [351,304,407,204,514];
+const MISS = [["Aarav",15.0,"Delhi",85.0],["Diya",14.0,"Mumbai",92.0],["Rohan","NaN","Delhi",78.0],["Isha",15.0,"NaN",88.0],["Kabir",14.0,"Mumbai","NaN"]];
+const NANC = {"2,1":"nan","3,2":"nan","4,3":"nan"};
+const G = [...copy(ROWS),["Meera",15,"Pune",90]];
+const CITYCLS = {Delhi:"g1",Mumbai:"g2",Pune:"g3"};
+const GC = Object.fromEntries(G.map((r,i)=>[i,CITYCLS[r[2]]]));
+
+/* ---------- storage (safe) ---------- */
+const store = {
+  get(k,d){try{const v=localStorage.getItem(k);return v===null?d:JSON.parse(v)}catch(e){return d}},
+  set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+};
+let done = new Set(store.get("pandas-done",[]));
+let cur = store.get("pandas-lesson",0); if(!(cur>=0&&cur<=LESSONS.length)) cur=0;
+let step = 0, seen = new Set(), timer = null, typing = null;
+
+/* ---------- helpers ---------- */
+const esc = s => String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+function highlight(src){
+  // tiny python colouring: comments, strings, numbers, keywords
+  return esc(src).replace(/(#.*$)|(&quot;|"[^"\n]*"|'[^'\n]*')|\b(\d+\.?\d*)\b|\b(import|as|from|True|False|None|and|or|in)\b/gm,
+    (m,c,s,n,k)=>c?`<span class="tk-c">${c}</span>`:s?`<span class="tk-s">${s}</span>`:n?`<span class="tk-n">${n}</span>`:`<span class="tk-k">${k}</span>`);
+}
+function fmt(v){
+  if(v===true) return `<span class="t">True</span>`;
+  if(v===false) return `<span class="f">False</span>`;
+  return esc(v);
+}
+function tableHTML(t){
+  const o = t, hc=new Set(o.hlCols||[]), nc=new Set(o.newCols||[]), gc=new Set(o.goneCols||[]);
+  const hr=new Set(o.hlRows||[]), dr=new Set(o.dimRows||[]), nr=new Set(o.newRows||[]), gr=new Set(o.goneRows||[]);
+  const cells=o.cells||{}, rc=o.rowCls||{};
+  const colCls = c => hc.has(c)?"hl":nc.has(c)?"new":gc.has(c)?"gone":o.hlHead?"hl-head":"";
+  let h = `<div class="tbl-wrap">${o.cap?`<div class="tbl-cap">${o.cap}</div>`:""}<table class="df"><thead><tr><th class="${o.hlIdx?"hl-idx":""}"></th>`;
+  o.cols.forEach(c=>h+=`<th class="${colCls(c)}">${esc(c)}</th>`);
+  h += `</tr></thead><tbody>`;
+  o.rows.forEach((row,r)=>{
+    const trc = [dr.has(r)?"dim":"", rc[r]||""].join(" ");
+    const delay = nr.has(r)?` style="animation-delay:${r*0.12}s"`:"";
+    h += `<tr class="${trc}"><th class="${o.hlIdx?"hl-idx":""} ${nr.has(r)?"new":""}"${delay}>${esc(o.idx[r])}</th>`;
+    row.forEach((v,c)=>{
+      const name=o.cols[c];
+      let cls = cells[`${r},${c}`] || (v==="NaN"?"nan":"") || (hr.has(r)?"hl":"") || (gr.has(r)?"gone":"") || (nr.has(r)?"new":"") || (colCls(name)==="hl-head"?"":colCls(name));
+      if(typeof v==="number") cls+=" num";
+      h += `<td class="${cls}"${delay}>${fmt(v)}</td>`;
+    });
+    h += `</tr>`;
+  });
+  return h + `</tbody></table></div>`;
+}
+function fileHTML(f){
+  return `<div class="file"${f.bad?` style="border-color:var(--red);background:var(--red-soft)"`:""}><div class="fname"${f.bad?` style="color:var(--red)"`:""}>${f.name}</div><pre>${f.lines.map((l,i)=>`<span style="animation-delay:${0.3+i*0.15}s">${esc(l)}</span>`).join("")}</pre></div>`;
+}
+function boardHTML(b){
+  let h = "";
+  if(b.html) h += b.html;
+  const parts = [];
+  if(b.file && b.fileFirst) parts.push(fileHTML(b.file));
+  (b.tables||[]).forEach((t,i)=>{ if(i>0 || (b.arrow && parts.length)) parts.push(`<span class="arrow">➜</span>`); parts.push(tableHTML(t)); });
+  if(b.file && !b.fileFirst){ if(parts.length) parts.push(`<span class="arrow">➜</span>`); parts.push(fileHTML(b.file)); }
+  if(parts.length) h += `<div class="tables">${parts.join("")}</div>`;
+  if(b.legend) h += `<div class="legend"><span class="g1">Delhi</span><span class="g2">Mumbai</span><span class="g3">Pune</span></div>`;
+  if(b.out) h += `<div class="out">${esc(b.out)}</div>`;
+  if(b.tip) h += `<div class="tip">💡 ${b.tip}</div>`;
+  return h;
+}
+
+/* ---------- render ---------- */
+const $ = s => document.querySelector(s);
+function renderTOC(){
+  const best = store.get("pandas-best",null);
+  $("#toc").innerHTML = LESSONS.map((l,i)=>(l.bonus&&!LESSONS[i-1].bonus?`<li class="sec">⭐ Bonus topics</li>`:"")+`<li class="${done.has(i)?"done":""}"><button class="${i===cur?"active":""}" data-i="${i}"><span class="num">${done.has(i)?"✓":i+1}</span>${l.icon} ${l.title}</button></li>`).join("")
+    + `<li class="sec">🏁 Finish</li><li class="${best===TEST.length?"done":""}"><button class="${cur===LESSONS.length?"active":""}" data-i="${LESSONS.length}"><span class="num">${best===TEST.length?"✓":"🏆"}</span>Final Test${best!==null?` (${best}/${TEST.length})`:""}</button></li>`;
+  $("#toc").querySelectorAll("button").forEach(b=>b.onclick=()=>{go(+b.dataset.i);$("#side").classList.remove("open")});
+}
+function go(i){
+  stopAuto(); cur=i; step=0; seen=new Set(); store.set("pandas-lesson",cur);
+  renderLesson(); renderTOC(); window.scrollTo({top:0,behavior:"smooth"});
+}
+function renderTest(){
+  const answered = {};
+  $("#main").innerHTML = `
+    <button class="btn menu-btn" id="menuBtn">☰ Topics</button>
+    <div class="lesson-head"><span class="big">🏆</span><div><h2>Final Test</h2><p>${TEST.length} questions from all the topics. Pick one answer for each question — your first click counts!</p></div></div>
+    ${TEST.map((t,n)=>`<div class="card quiz" style="margin-top:14px" data-n="${n}"><div><b>Q${n+1}.</b> ${esc(t.q)}</div><div class="opts">${t.opts.map((o,i)=>`<button class="opt mono" data-i="${i}">${esc(o)}</button>`).join("")}</div></div>`).join("")}
+    <div class="card" style="margin-top:20px;text-align:center"><div id="score" style="font-size:22px;font-weight:700">Score: 0 / ${TEST.length}</div><div id="scoreMsg" style="color:var(--muted)">Answer all questions to see your result.</div>
+    <button class="btn" id="retry" style="margin-top:10px">↺ Try again</button></div>`;
+  $("#menuBtn").onclick=()=>$("#side").classList.toggle("open");
+  $("#retry").onclick=()=>go(LESSONS.length);
+  document.querySelectorAll(".quiz[data-n]").forEach(card=>{
+    const n=+card.dataset.n, t=TEST[n];
+    card.querySelectorAll(".opt").forEach(b=>b.onclick=()=>{
+      if(n in answered) return;
+      const i=+b.dataset.i; answered[n]=i===t.a;
+      b.classList.add(i===t.a?"right":"wrong");
+      card.querySelectorAll(".opt")[t.a].classList.add("right");
+      const got=Object.values(answered).filter(Boolean).length, all=Object.keys(answered).length;
+      $("#score").textContent=`Score: ${got} / ${TEST.length}`;
+      if(all===TEST.length){
+        $("#scoreMsg").textContent = got===TEST.length?"🌟 Perfect! You are a pandas star!":got>=7?"🎉 Great job! Review the red ones and try again.":"💪 Good try! Watch the lessons again and retake the test.";
+        const best=store.get("pandas-best",0); if(got>=best) store.set("pandas-best",got); renderTOC();
+      }
+    });
+  });
+}
+function renderLesson(){
+  if(cur===LESSONS.length) return renderTest();
+  const L = LESSONS[cur];
+  $("#main").innerHTML = `
+    <button class="btn menu-btn" id="menuBtn">☰ Topics</button>
+    <div class="lesson-head"><span class="big">${L.icon}</span><div><h2>${cur+1}. ${L.title}</h2><p>${L.sub}</p></div></div>
+    <div class="story">📖 ${L.story}</div>
+    <div class="stage">
+      <div>
+        <div class="card code-card">
+          <div class="code-top"><span class="dot" style="background:#ff5f57"></span><span class="dot" style="background:#febc2e"></span><span class="dot" style="background:#28c840"></span><span class="lbl" id="stepLbl"></span><button class="copy" id="copyBtn">Copy</button></div>
+          <pre class="code" id="code"></pre>
+        </div>
+        <div class="card teacher" style="margin-top:14px"><span class="face">👩‍🏫</span><div class="bubble" id="say"></div></div>
+        <div class="controls">
+          <button class="btn" id="prev">◀ Back</button>
+          <button class="btn primary" id="next">Next ▶</button>
+          <button class="btn" id="auto">▶ Auto play</button>
+          <div class="steps-dots" id="dots"></div>
+        </div>
+      </div>
+      <div class="card board"><div class="board-title">👀 Watch the table</div><div id="board" class="board"></div></div>
+    </div>
+    <div class="card quiz" id="quiz"></div>
+    <div class="card remember"><h3 style="margin:0">📝 Remember</h3><ul>${L.remember.map(r=>`<li>${r}</li>`).join("")}</ul></div>
+    <div class="nav-bottom">
+      <button class="btn" id="prevL" ${cur===0?"disabled":""}>◀ Previous topic</button>
+      <button class="btn primary" id="nextL">${cur===LESSONS.length-1?"Take the Final Test 🏆":"Next topic ▶"}</button>
+    </div>`;
+  $("#menuBtn").onclick=()=>$("#side").classList.toggle("open");
+  $("#prev").onclick=()=>{stopAuto();show(step-1)};
+  $("#next").onclick=()=>{stopAuto();show(step+1)};
+  $("#auto").onclick=()=>timer?stopAuto():startAuto();
+  $("#prevL").onclick=()=>go(cur-1);
+  $("#nextL").onclick=()=>go(cur+1);
+  $("#copyBtn").onclick=()=>{try{navigator.clipboard.writeText(L.steps[step].code);$("#copyBtn").textContent="Copied!";setTimeout(()=>{const b=$("#copyBtn");if(b)b.textContent="Copy"},1200)}catch(e){}};
+  renderQuiz();
+  show(0);
+}
+function show(i){
+  if(cur===LESSONS.length) return;
+  const L = LESSONS[cur];
+  if(i<0||i>=L.steps.length) return;
+  step=i; seen.add(i);
+  const S = L.steps[i];
+  $("#stepLbl").textContent = `Step ${i+1} of ${L.steps.length}`;
+  typeCode(S.code);
+  $("#say").outerHTML = `<div class="bubble" id="say">${S.say}</div>`;
+  $("#board").innerHTML = boardHTML(S.board());
+  $("#dots").innerHTML = L.steps.map((_,k)=>`<span class="${k===i?"on":seen.has(k)?"seen":""}"></span>`).join("");
+  $("#prev").disabled = i===0;
+  $("#next").disabled = i===L.steps.length-1;
+}
+function typeCode(src){
+  clearInterval(typing);
+  const el=$("#code"); let n=0;
+  const speed = Math.max(8, 900/src.length);
+  typing=setInterval(()=>{
+    n+=2;
+    if(n>=src.length){clearInterval(typing);el.innerHTML=highlight(src);return}
+    el.innerHTML=esc(src.slice(0,n))+`<span class="caret"></span>`;
+  },speed);
+}
+function startAuto(){
+  $("#auto").textContent="⏸ Pause";
+  if(step===LESSONS[cur].steps.length-1) show(0);
+  timer=setInterval(()=>{
+    if(step>=LESSONS[cur].steps.length-1){stopAuto();return}
+    show(step+1);
+  },5000);
+}
+function stopAuto(){clearInterval(timer);timer=null;const a=$("#auto");if(a)a.textContent="▶ Auto play"}
+function renderQuiz(){
+  const Q = LESSONS[cur].quiz;
+  $("#quiz").innerHTML = `<h3>🧠 Quick quiz</h3><div>${Q.q}</div><div class="opts">${Q.opts.map((o,i)=>`<button class="opt mono" data-i="${i}">${esc(o)}</button>`).join("")}</div><div class="feedback" id="fb"></div>`;
+  $("#quiz").querySelectorAll(".opt").forEach(b=>b.onclick=()=>{
+    const i=+b.dataset.i;
+    $("#quiz").querySelectorAll(".opt").forEach(x=>x.classList.remove("right","wrong"));
+    if(i===Q.a){
+      b.classList.add("right"); $("#fb").innerHTML=`🎉 Correct! ${Q.why}`; $("#fb").style.color="var(--green)";
+      done.add(cur); store.set("pandas-done",[...done]); renderTOC();
+    } else {
+      b.classList.add("wrong"); $("#fb").innerHTML=`Not quite — try again! 💪`; $("#fb").style.color="var(--red)";
+    }
+  });
+}
+
+/* keyboard: ← → to move steps */
+document.addEventListener("keydown",e=>{
+  if(e.key==="ArrowRight"){stopAuto();show(step+1)}
+  if(e.key==="ArrowLeft"){stopAuto();show(step-1)}
+});
+$("#themeBtn").onclick=()=>{
+  const r=document.documentElement;
+  const dark = r.dataset.theme ? r.dataset.theme==="dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+  r.dataset.theme = dark?"light":"dark"; store.set("pandas-theme",r.dataset.theme);
+};
+$("#resetBtn").onclick=()=>{done=new Set();store.set("pandas-done",[]);renderTOC()};
+const savedTheme=store.get("pandas-theme",null); if(savedTheme) document.documentElement.dataset.theme=savedTheme;
+
+renderTOC(); renderLesson();
+</script>
+</body>
+</html>

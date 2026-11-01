@@ -1,0 +1,57 @@
+'use strict';
+/* =====================================================================
+   Picture Class lessons. Real things instead of shapes: a car for linear algebra, a library for RAG, a factory conveyor for automation.
+   Every code line is real and correct; the "out" text is what Python prints.
+   ===================================================================== */
+var PIC_I = [[1, 0], [0, 1]];
+var picAttn = (n, pref) => Array.from({ length: n }, (_, i) => { const row = Array.from({ length: n }, (_, j) => (j > i ? 0 : (pref[i] && pref[i][j] != null ? pref[i][j] : 0.04 + (j === i ? 0.06 : 0)))); const s = row.reduce((a, b) => a + b, 0); return row.map(v => v / s); });
+
+/* ============================ 1. Linear algebra with a car ============================ */
+
+/* ============================ 2. NumPy as a school register ============================ */
+PIC.lesson({
+  id: 'np-register', group: 'Linear algebra and NumPy', title: 'NumPy: a school marks register', icon: '🔢', sub: 'Arrays, shape, slicing, weights with a dot product, transpose and broadcasting.',
+  story: 'A class teacher keeps a register: one row per student, one column per subject. A NumPy array is exactly that register, but it can do maths on every cell at once.',
+  steps: [
+    { code: 'import numpy as np\n\nmarks = np.array([[80, 70, 90],\n                  [60, 85, 75]])', say: 'Two students (rows), three subjects (columns): Maths, Science, English. <b>np.array</b> turns the list of lists into a grid.', scene: { type: 'matrix', items: [{ m: [[80, 70, 90], [60, 85, 75]], name: 'marks', color: 'blue' }], say: 'rows = students · columns = subjects' } },
+    { code: 'print(marks.shape)      # (rows, columns)\nprint(marks.ndim)       # how many directions', say: '<b>shape</b> says how big the register is: <b>(2, 3)</b> means 2 rows and 3 columns. No brackets after it: it is a fact about the grid, not an action.', out: '(2, 3)\n2', scene: { type: 'matrix', items: [{ m: [[80, 70, 90], [60, 85, 75]], name: 'marks', color: 'blue' }], say: 'Shape (2, 3): 2 rows down, 3 columns across.' } },
+    { code: 'print(marks[0, 1])     # row 0, column 1\nprint(marks[:, 0])     # every row, column 0 (Maths)\nprint(marks[1, :])     # row 1, every column', say: '<b>Slicing</b> picks parts. Counting starts at <b>0</b>. First number = row, second = column, and a colon <b>:</b> means "all". So <code>marks[:, 0]</code> is the whole Maths column.', out: '70\n[80 60]\n[60 85 75]', scene: { type: 'matrix', items: [{ m: [[80, 70, 90], [60, 85, 75]], name: 'marks[:, 0]', color: 'blue', hl: { col: 0 } }], say: 'The highlighted column is <code>marks[:, 0]</code>: all students, Maths only.' } },
+    { code: 'weights = np.array([0.5, 0.3, 0.2])   # Maths counts most\nfinal = marks @ weights\nprint(final)', say: 'The school counts Maths 50%, Science 30%, English 20%. Each student\'s final mark is <b>row × weights</b>: multiply matching numbers and add. That is a <b>matrix times vector</b>, and it is the same operation inside every neural network layer.', out: '[79.  70.5]', scene: { type: 'matrix', items: [{ m: [[80, 70, 90], [60, 85, 75]], name: 'marks', color: 'blue' }, { op: '×' }, { m: [[0.5], [0.3], [0.2]], name: 'weights', color: 'orange' }, { op: '=' }, { m: [[0], [0]], name: 'final', color: 'green', empty: true }], anim: 'matmul' } },
+    { code: 'marks.T          # transpose: rows become columns', say: '<b>Transpose</b> flips the register on its side: subjects become rows, students become columns. Row 1 turns into column 1.', out: 'array([[80, 60],\n       [70, 85],\n       [90, 75]])', scene: { type: 'matrix', items: [{ m: [[80, 70, 90], [60, 85, 75]], name: 'marks', color: 'blue' }, { op: '→' }, { m: [[80, 60], [70, 85], [90, 75]], name: 'marks.T', color: 'purple' }], anim: 'transpose' } },
+    { code: 'bonus = np.array([5, 0, 10])   # extra marks per subject\nmarks + bonus', say: '<b>Broadcasting</b>: a row of 3 numbers is added to <b>every</b> row of the register, as if you copied it down. No loop needed. The rule: the shapes must match from the right (3 columns with 3 numbers).', out: 'array([[85, 70, 100],\n       [65, 85,  85]])', scene: { type: 'matrix', items: [{ m: [[80, 70, 90], [60, 85, 75]], name: 'marks', color: 'blue' }, { op: '+' }, { m: [[5, 0, 10], [5, 0, 10]], name: 'bonus (copied down)', color: 'orange' }, { op: '=' }, { m: [[85, 70, 100], [65, 85, 85]], name: 'result', color: 'green' }] } },
+    { code: 'print(marks.mean(axis=0))     # average of each subject\nprint(marks.mean(axis=1).round(2))     # average of each student', say: '<b>axis</b> says which way to collapse. <code>axis=0</code> goes <b>down</b> the rows (one answer per column = per subject); <code>axis=1</code> goes <b>across</b> (one answer per row = per student).', out: '[70.  77.5 82.5]\n[80.   73.33]', scene: { type: 'matrix', items: [{ m: [[80, 70, 90], [60, 85, 75]], name: 'marks', color: 'blue', hl: { row: 0 } }], say: 'axis=1 averages along each highlighted row: 80 for student 1.' } },
+  ],
+  quiz: { q: 'marks.shape is (2, 3). What does marks[:, 0] give?', opts: ['The first row', 'The first column (all students, subject 0)', 'A single number', 'The transpose'], a: 1, why: 'The colon means "all rows" and 0 picks column 0, so you get one number per student for the first subject.' },
+  remember: ['<code>np.array</code> turns lists into a grid; <code>shape</code> = (rows, columns).', 'Counting starts at 0; <code>a[row, col]</code>; <code>:</code> means all.', '<code>A @ b</code> = rows against the vector: weighted totals.', '<code>.T</code> flips rows and columns.', 'Broadcasting copies a smaller array across a bigger one when the shapes line up from the right.', '<code>axis=0</code> down the rows, <code>axis=1</code> across.'],
+  lab: { href: '#/sheet/numpy', label: 'Open the NumPy function sheet' },
+});
+
+/* ============================ 3. Drawing a graph ============================ */
+PIC.lesson({
+  id: 'plot-draw', group: 'Graphs', title: 'How a graph is drawn', icon: '📈', sub: 'From two lists to a finished chart: axes, points, the line passing through them, labels, a best-fit line and bars.',
+  story: 'A chart is nothing magic: a pen visits your data points, in order, on a sheet with a ruler along each side. Here you watch the pen work, then you do it yourself in the Graph Lab.',
+  steps: [
+    { code: 'import matplotlib.pyplot as plt\n\nmonths = [1, 2, 3, 4, 5, 6]\nsales  = [12, 15, 14, 19, 24, 28]', say: 'Two lists of the <b>same length</b>: the first says <i>where along</i> (x), the second says <i>how high</i> (y). Month 1 had sales of 12, month 2 had 15, and so on. Each pair is one dot waiting to be drawn.', scene: { type: 'table', cols: ['month (x)', 'sales (y)'], rows: [[1, 12], [2, 15], [3, 14], [4, 19], [5, 24], [6, 28]], newRows: [0, 1, 2, 3, 4, 5] } },
+    { code: 'fig, ax = plt.subplots()', say: '<b>plt.subplots()</b> hands you a blank sheet (<code>fig</code>) with one empty set of axes on it (<code>ax</code>). The two rulers are there, the grid is faint, but nothing is drawn yet.', scene: { type: 'plot', pts: [], kind: 'scatter', xmax: 7, ymax: 30, title: '', xlab: 'months', ylab: 'sales' } },
+    { code: 'ax.scatter(months, sales)', say: 'Each (x, y) pair becomes a <b>dot</b> at the right place. Watch them drop in one by one, in list order. Nothing connects them yet, so this is a <b>scatter plot</b>.', scene: { type: 'plot', pts: [[1, 12], [2, 15], [3, 14], [4, 19], [5, 24], [6, 28]], kind: 'scatter', xmax: 7, ymax: 30, xlab: 'months', ylab: 'sales' } },
+    { code: 'ax.plot(months, sales)', say: '<b>plot</b> adds a pen that travels <b>through the points in order</b>: first to point 1, then straight to point 2, then 3... Every segment is a straight line, so the line only <i>passes through</i> your data; it does not guess what happens in between. Watch the pen.', scene: { type: 'plot', pts: [[1, 12], [2, 15], [3, 14], [4, 19], [5, 24], [6, 28]], kind: 'line', xmax: 7, ymax: 30, xlab: 'months', ylab: 'sales' } },
+    { code: 'ax.set_title("Monthly sales")\nax.set_xlabel("Month")\nax.set_ylabel("Sales (thousand rupees)")\nplt.show()', say: 'A chart without words is a puzzle. The <b>title</b> says what you are looking at, the <b>labels</b> say what each ruler measures and in which unit. This costs three lines and doubles how useful the chart is.', scene: { type: 'plot', pts: [[1, 12], [2, 15], [3, 14], [4, 19], [5, 24], [6, 28]], kind: 'line', xmax: 7, ymax: 30, title: 'Monthly sales', xlab: 'Month', ylab: 'Sales (thousand rupees)' } },
+    { code: 'import numpy as np\nslope, intercept = np.polyfit(months, sales, 1)\nax.plot(months, slope * np.array(months) + intercept)\nprint(f"slope {slope:.1f}   intercept {intercept:.1f}")', say: 'Sometimes you do not want the pen to chase every wobble but to show the <b>overall direction</b>. <code>np.polyfit</code> finds the one straight line that is closest to all the dots at once (the <b>best-fit line</b>). Its slope says: about 3 more sales every month.', out: 'slope 3.2   intercept 7.5', scene: { type: 'plot', pts: [[1, 12], [2, 15], [3, 14], [4, 19], [5, 24], [6, 28]], kind: 'scatter', fit: true, xmax: 7, ymax: 30, title: 'The trend', xlab: 'Month', ylab: 'Sales' } },
+    { code: 'ax.bar(["Pune", "Delhi", "Mumbai", "Goa"], [14, 22, 30, 9])', say: 'When the x values are <b>categories</b> (cities, products) rather than numbers on a ruler, use <b>bars</b>. Each bar grows from zero up to its value, so you compare heights at a glance.', scene: { type: 'plot', pts: [[1, 14], [2, 22], [3, 30], [4, 9]], kind: 'bar', xmax: 5, ymax: 35, xmin: 0, title: 'Sales by city (1=Pune 2=Delhi 3=Mumbai 4=Goa)', xlab: 'city', ylab: 'sales' } },
+  ],
+  quiz: { q: 'What does ax.plot(x, y) do with your points?', opts: ['Draws only dots', 'Draws a pen line through the points in order', 'Finds the best straight line', 'Sorts the points by value first'], a: 1, why: 'plot connects the points in the order you give them. Use scatter for dots only, and polyfit for a best-fit line.' },
+  remember: ['Two lists of equal length: x = where, y = how high.', '<code>plt.subplots()</code> = blank sheet + axes.', '<code>scatter</code> dots, <code>plot</code> line through the points in order, <code>bar</code> for categories.', 'Always add a title and labelled axes with units.', '<code>np.polyfit(x, y, 1)</code> = slope and intercept of the best straight line.'],
+  lab: { href: '#/graphlab', label: 'Open the Graph Lab (write code, drag points)' },
+});
+
+/* ============================ 4. A neural network, in full ============================ */
+
+/* ============================ 5. How an LLM reads and answers ============================ */
+
+/* ============================ 6. RAG as a library ============================ */
+
+/* ============================ 7. Automation ============================ */
+
+/* ============================ 8. Your pandas picture classes ============================ */
+PIC.lesson({ id: 'pandas-1', group: 'Pandas (from your own files)', title: 'Pandas Picture Class, part 1', icon: '🐼', sub: 'Create a DataFrame, look at it, save and load CSV, select and filter: your own lesson file, shown inside DS Quest.', embed: 'picture/pandas_part1.html' });
+PIC.lesson({ id: 'pandas-2', group: 'Pandas (from your own files)', title: 'Pandas Picture Class, part 2', icon: '🐼', sub: 'Your second pandas lesson file: the next topics, with the same picture-by-picture style.', embed: 'picture/pandas_part2.html' });

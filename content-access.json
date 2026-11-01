@@ -1,0 +1,13 @@
+{
+  "free": [
+    "python",
+    "numpy",
+    "pandas",
+    "eda",
+    "matplotlib",
+    "sql",
+    "evals",
+    "uncertainty",
+    "respai"
+  ]
+}

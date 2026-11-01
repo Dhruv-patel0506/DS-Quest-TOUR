@@ -1,0 +1,121 @@
+'use strict';
+/* =====================================================================
+   The roadmap: phases and the full module list (what a data scientist / AI engineer
+   is expected to know in 2026). A module with a content file (m01_numpy.js ...) is "live";
+   the rest show their syllabus and capstone idea and are built next in the same format.
+   ===================================================================== */
+DSQ.phases = [
+  { id: 0, name: 'Foundations', blurb: 'Python and the habits of a programmer.' },
+  { id: 1, name: 'The data stack', blurb: 'NumPy, pandas, reading and cleaning data (the flagship: most of the real work), plots, SQL: the daily tools.' },
+  { id: 2, name: 'Maths & statistics', blurb: 'Just enough to understand why models work.' },
+  { id: 3, name: 'Machine learning', blurb: 'Classical ML with scikit-learn, boosting, clustering, time series.' },
+  { id: 4, name: 'Deep learning', blurb: 'Neural nets, PyTorch, vision, language, transformers.' },
+  { id: 5, name: 'GenAI & agents', blurb: 'LLMs, embeddings, RAG, GraphRAG, LangChain, LangGraph, evals.' },
+  { id: 6, name: 'Ship it', blurb: 'MLOps/LLMOps, deployment, monitoring and a production-ready capstone.' },
+  { id: 7, name: 'Build and automate', blurb: 'The engineering skills courses skip: APIs, web frameworks, containers, pipelines, data apps.' },
+  { id: 8, name: 'Career and content', blurb: 'Show your work, be found, get paid: content, portfolio, freelancing.' },
+  { id: 9, name: 'Engineering and product', blurb: 'System design, DevOps and UI/UX: how real products are designed, shipped and made usable.' },
+];
+
+DSQ.roadmap = [
+  /* ---------------- phase 0 ---------------- */
+  { id: 'python', phase: 0, title: 'Python for Data Science', icon: 'Py', color: 4, hours: 10, blurb: 'Variables, loops, functions, comprehensions, dicts, files, errors - the 20% of Python that does 80% of the work.',
+    syllabus: ['Variables, numbers, strings, f-strings', 'Lists, tuples, dicts, sets', 'if / for / while', 'Functions, defaults, lambda', 'Comprehensions', 'Files and JSON/CSV', 'Errors and try/except', 'Modules, venv, pip'], capstone: 'Expense tracker that reads a CSV and prints a monthly report' },
+
+  /* ---------------- phase 1 ---------------- */
+  { id: 'numpy', phase: 1, title: 'NumPy', icon: 'Np', color: 0, hours: 12, blurb: 'The n-dimensional array: shapes, slicing, broadcasting, vectorised maths, linear algebra, random numbers.',
+    syllabus: ['ndarray, dtype, shape', 'Creating arrays', 'Indexing and slicing', 'Boolean masks and np.where', 'Vectorisation and broadcasting', 'Axis reductions', 'Reshape, stack, split', 'Linear algebra and random'], capstone: 'A signal/sensor analysis, image filter or sports-analytics engine written only with NumPy' },
+  { id: 'pandas', phase: 1, title: 'pandas', icon: 'Pd', color: 1, hours: 14, blurb: 'DataFrames: load, select, clean, group, merge, reshape and time-series basics.',
+    syllabus: ['Series and DataFrame', 'Reading CSV/JSON/Excel', 'loc / iloc / boolean filters', 'New columns, apply, map', 'Missing data and dtypes', 'groupby, agg, pivot', 'merge / join / concat', 'Dates and strings', 'Copy-on-Write and performance (Polars, DuckDB)'], capstone: 'A business report from messy sales / transport / library data' },
+  { id: 'matplotlib', phase: 1, title: 'Matplotlib & Seaborn', icon: 'Mp', color: 3, hours: 8, blurb: 'Figures, axes, every common chart, subplots, styling and telling a story with a chart.',
+    syllabus: ['Figure and Axes anatomy', 'Line, scatter, bar, hist, box', 'Subplots and layout', 'Colour, style, annotation', 'Seaborn statistical plots', 'Plotly and dashboards (overview)', 'Choosing the right chart'], capstone: 'A one-page visual story dashboard' },
+  { id: 'eda', phase: 1, free: true, flagship: true, title: 'Data Reading & Cleaning: the 70% of the job', icon: 'Dc', color: 2, hours: 16, blurb: 'The flagship module. Most real work is getting data in and making it trustworthy: read files that lie, handle missing data, duplicates and joins, outliers and units, then validate and automate it so tomorrow\'s messy data is handled without you.',
+    syllabus: ['Reading files that lie: encodings, delimiters, headers and types', 'Missing data: why it is missing decides what you do', 'Duplicates, keys and joins that multiply rows', 'Impossible, odd and mixed-up values: ranges, units and outliers', 'Validation as code: schema, rules and a data contract', 'A cleaning pipeline you can trust in production', 'Case study: one messy dataset, from raw to model-ready', 'Audit first, EDA and matrices in cleaning, writing the EDA report'], capstone: 'Take one genuinely messy file from raw to a validated, model-ready table, with a log of every fix and a daily run report that raises an alert when tomorrow\'s data moves' },
+  { id: 'sql', phase: 1, free: true, title: 'SQL for Data Science', icon: 'Sq', color: 5, hours: 8, blurb: 'SELECT, WHERE, GROUP BY, JOIN, window functions - run on a real SQLite database inside your browser.',
+    syllabus: ['SELECT / WHERE / ORDER BY', 'Aggregates and GROUP BY / HAVING', 'JOINs', 'Subqueries and CTEs', 'Window functions', 'SQL from pandas', 'Query design and indexes'], capstone: 'An analytics database answering 10 business questions' },
+
+  { id: 'analytics', phase: 1, free: true, title: 'Data Analytics for Business', icon: 'An', color: 6, hours: 6, blurb: 'The daily work of an analyst: metric trees and KPIs, funnels, cohort retention, Pareto and RFM segments, and reporting honestly (Simpson’s paradox, headlines, dashboards).',
+    syllabus: ['Metric trees and KPIs', 'Funnels and drop-off', 'Cohort retention', 'Pareto and RFM segments', 'Headlines, dashboards and Simpson’s paradox'], capstone: 'A one-page analytics report on a shop: KPIs, funnel, retention and a recommendation' },
+
+  /* ---------------- phase 2 ---------------- */
+  { id: 'stats', phase: 2, title: 'Statistics & Probability', icon: 'St', color: 6, hours: 12, blurb: 'Distributions, sampling, confidence intervals, hypothesis tests, A/B testing, Bayes.',
+    syllabus: ['Descriptive statistics', 'Probability rules and Bayes', 'Distributions', 'Sampling and the CLT', 'Confidence intervals', 'Hypothesis tests and p-values', 'A/B testing', 'Correlation and regression basics'], capstone: 'An A/B test analysis with a decision memo' },
+  { id: 'linalg', phase: 2, title: 'Linear Algebra & Calculus for ML', icon: 'LA', color: 0, hours: 10, blurb: 'Vectors, matrices, eigen-things, derivatives and gradients - seen in 3D, not memorised.',
+    syllabus: ['Vectors and dot product', 'Matrices as transformations', 'Solving systems', 'Eigenvectors and SVD', 'Derivatives and the chain rule', 'Gradients and gradient descent', 'Optimisation intuition'], capstone: 'Implement PCA and gradient descent from scratch' },
+
+  /* ---------------- phase 3 ---------------- */
+  { id: 'mlcore', phase: 3, title: 'Machine Learning with scikit-learn', icon: 'ML', color: 3, hours: 40, blurb: 'The professional ML loop plus the model families: linear and logistic regression, k-NN, trees, forests, boosting (XGBoost/LightGBM idea), clustering, PCA - each shown live in 3-D.',
+    syllabus: ['Train / test split and leakage', 'Linear regression in 3-D', 'Logistic regression and decision boundaries', 'Trees, forests and boosting', 'Metrics, cross-validation, pipelines', 'K-means and PCA in 3-D', 'Model cards and honest evaluation'], capstone: 'A churn or price model with a pipeline, honest metrics and a model card' },
+  { id: 'ts', phase: 3, free: true, title: 'Time Series & Forecasting', icon: 'Ts', color: 0, hours: 10, blurb: 'Trend, seasonality, lag features, ARIMA/ETS, ML forecasting, backtesting.',
+    syllabus: ['Components of a series', 'Resampling and rolling windows', 'Lag features', 'ARIMA / ETS', 'ML for forecasting', 'Backtesting'], capstone: 'Demand forecast with honest backtests' },
+
+  /* ---------------- phase 4 ---------------- */
+  { id: 'nn', phase: 4, title: 'Deep Learning: Neural Networks from Scratch', icon: 'Nn', color: 6, hours: 20, blurb: 'Neurons, forward pass, loss, backpropagation and gradient descent - built in NumPy, watched as a live decision boundary and a 3-D loss landscape; then PyTorch, CNNs and the training loop explained.',
+    syllabus: ['A neuron and the forward pass', 'Loss and gradient descent in 3-D', 'Backpropagation by hand and in NumPy', 'Activations, optimisers (SGD, Adam), overfitting, dropout', 'PyTorch: tensors, autograd, nn.Module, training loop (read + copy-run locally)', 'CNNs and transfer learning (concepts + code)'], capstone: 'A neural network trained from scratch on your own dataset' },
+  { id: 'pytorch', phase: 4, free: true, title: 'PyTorch', icon: 'Pt', color: 1, hours: 14, blurb: 'Tensors, autograd, nn.Module, training loops, GPUs, saving models.',
+    syllabus: ['Tensors and autograd', 'nn.Module', 'DataLoader', 'Training loop', 'Evaluation and checkpoints', 'GPU and mixed precision', 'torch.compile basics'], capstone: 'Train and evaluate an image or tabular network' },
+  { id: 'cnn', phase: 4, free: true, title: 'Computer Vision', icon: 'Cv', color: 4, hours: 12, blurb: 'Convolutions, CNNs, transfer learning, augmentation, detection and segmentation overview.',
+    syllabus: ['Convolution and pooling', 'CNN architectures', 'Transfer learning', 'Augmentation', 'Detection and segmentation', 'Vision transformers (overview)'], capstone: 'An image classifier with transfer learning' },
+  { id: 'nlp', phase: 4, free: true, title: 'NLP & Transformers', icon: 'Nl', color: 3, hours: 14, blurb: 'Tokens, bag-of-words and TF-IDF, then attention and the transformer block, built and visualised from scratch.',
+    syllabus: ['Text cleaning and tokens', 'TF-IDF and cosine similarity', 'Embeddings', 'Attention from scratch (live heatmap)', 'The transformer block', 'Hugging Face pipelines (copy-run locally)'], capstone: 'A ticket classifier and a semantic search over your own text' },
+  { id: 'tokens', phase: 4, free: true, title: 'Tokenization: How Text Becomes Numbers', icon: 'Tk', color: 2, hours: 5, blurb: 'Characters, bytes, vocabularies and Byte-Pair Encoding written from scratch: what GPT-style models really read, and why tokens are what you pay for.',
+    syllabus: ['Characters, code points and UTF-8 bytes', 'Word vocabularies and the unknown token', 'Byte-Pair Encoding: count, merge, train, encode', 'Vocabulary size trade-offs', 'Counting tokens and cost', 'tiktoken and Hugging Face tokenizers (copy-run)'], capstone: 'A tokenizer trained on your own text' },
+  { id: 'rag', phase: 5, title: 'LLMs, Embeddings, RAG & GraphRAG', icon: 'Rg', color: 2, hours: 24, blurb: 'How LLM apps get knowledge: embeddings and vector search in 3-D, chunking, retrieval, grading, citations, evaluation, and knowledge-graph retrieval (GraphRAG).',
+    syllabus: ['Tokens, context windows, prompts, structured output', 'Embeddings and cosine search', 'Chunking and a working retriever', 'RAG evaluation: hit-rate, MRR, faithfulness', 'Hybrid search, reranking, query rewriting', 'GraphRAG with a knowledge graph', 'Vector databases: FAISS, Chroma, pgvector, Qdrant (concepts + code)'], capstone: 'A cited-answer RAG assistant over your own documents with an evaluation set' },
+  { id: 'agents', phase: 5, title: 'Agentic AI: Tool Calling, LangChain, LangGraph & MCP', icon: 'Ag', color: 5, hours: 22, blurb: 'Agents as state machines: tool calling, the agent loop, LangGraph state/nodes/edges, memory, human-in-the-loop, MCP, guardrails and evals - first built in plain Python, then mapped to LangChain/LangGraph.',
+    syllabus: ['The agent loop: think, act, observe', 'Tool calling and structured outputs', 'A StateGraph from scratch (runs here)', 'LangChain and LangGraph code (real API, copy-run locally)', 'Memory, persistence, human-in-the-loop', 'MCP servers and tools', 'Multi-agent patterns, tracing and evals'], capstone: 'A support agent as a graph with tools, a guardrail and a test set' },
+  { id: 'finetune', phase: 5, free: true, title: 'Fine-tuning & Small Models', icon: 'Ft', color: 6, hours: 10, blurb: 'When to fine-tune, LoRA/QLoRA, datasets, quantisation, running models locally.',
+    syllabus: ['Prompting vs RAG vs fine-tuning', 'Dataset preparation', 'LoRA / QLoRA', 'Quantisation', 'Serving: vLLM, Ollama', 'Evaluating a tuned model'], capstone: 'A tuned small model evaluated against a base model' },
+
+  /* ---------------- phase 6 ---------------- */
+  { id: 'mlops', phase: 6, free: true, title: 'Ship It: FastAPI, Docker, Git, CI & LLMOps', icon: 'Op', color: 1, hours: 16, blurb: 'Turn a notebook into a service: pydantic validation, FastAPI endpoints, Dockerfile, GitHub Actions, Vercel/Render deployment, monitoring and drift.',
+    syllabus: ['Model -> function -> API', 'pydantic request validation (runs here)', 'FastAPI routes and docs (real code)', 'Docker and docker-compose', 'GitHub Actions CI', 'Deploying: Vercel, Render, Hugging Face Spaces', 'Monitoring, drift and LLM cost'], capstone: 'A containerised prediction API with tests and CI' },
+  { id: 'capstone', phase: 6, free: true, title: 'Capstone: Ship a Production-Ready AI System', icon: 'Cp', color: 3, hours: 30, blurb: 'The proof of the whole course: two portfolio projects that take a messy real-world problem to a monitored, tested, deployed system, plus the case-study format and interview practice.',
+    syllabus: ['Choosing a problem', 'Building a case study', 'ML system design', 'SQL and Python interview drills', 'Behavioural stories', 'Resume and GitHub polish'], capstone: 'Two published projects and a one-page portfolio' },
+
+  /* ---------------- phase 7 ---------------- */
+  { id: 'webapi', phase: 7, free: true, title: 'HTTP, REST & JSON', icon: 'Ht', color: 4, hours: 4, blurb: 'Requests, responses, status codes, REST design, pagination and nested JSON: the language every service speaks.',
+    syllabus: ['Request and response anatomy', 'Methods and status codes', 'Query strings and URL building', 'REST resource design', 'Pagination and error shapes', 'JSON in Python'], capstone: 'A client for a public API' },
+  { id: 'fastapi', phase: 7, free: true, title: 'FastAPI: Build a Real API', icon: 'Fa', color: 1, hours: 7, blurb: 'Routes, path and query parameters, pydantic validation, error handling and a data API served from 50,000 rows. Real FastAPI code, tested in your browser.',
+    syllabus: ['Routes and parameters', 'pydantic models and validation', 'HTTPException and status codes', 'Serving a dataset or model', 'Testing with a client', 'Deploying with uvicorn and Docker'], capstone: 'A prediction API with validation and tests' },
+  { id: 'django', phase: 7, free: true, title: 'Django for Data Apps', icon: 'Dj', color: 2, hours: 8, blurb: 'Models and the ORM, URLs, views and templates on a real Django running in your browser with an in-memory database.',
+    syllabus: ['Model-View-Template', 'Models and migrations', 'The ORM: filter, aggregate, annotate', 'URLs and views', 'Templates and escaping', 'Admin, auth and deployment (overview)'], capstone: 'A small dashboard site with a database' },
+  { id: 'docker', phase: 7, free: true, title: 'Linux, Git & Docker for Data People', icon: 'Dk', color: 5, hours: 8, blurb: 'The command line, Git branches and pull requests, and packaging a project in a container so it runs anywhere.',
+    syllabus: ['Shell basics and files', 'Git: branch, commit, merge, pull request', 'Virtual environments and requirements', 'Dockerfile and docker compose', 'Environment variables and secrets', 'CI with GitHub Actions'], capstone: 'A containerised project with CI' },
+  { id: 'pipelines', phase: 7, free: true, title: 'Data Pipelines: Airflow, dbt & Spark', icon: 'Pl', color: 3, hours: 12, blurb: 'Schedule, transform and scale data work: orchestration, analytics engineering and distributed processing.',
+    syllabus: ['ETL vs ELT', 'Airflow / Prefect DAGs', 'dbt models and tests', 'PySpark DataFrames', 'Data quality and contracts', 'Warehouses and lakehouses'], capstone: 'A scheduled pipeline with tests' },
+  { id: 'dataapps', phase: 7, free: true, title: 'Data Apps: Streamlit, Gradio & Dashboards', icon: 'Da', color: 0, hours: 6, blurb: 'Turn analysis into something other people can click: Streamlit, Gradio and BI dashboards.',
+    syllabus: ['Streamlit layout and state', 'Gradio for model demos', 'Charts and filters', 'Caching and speed', 'BI dashboard design', 'Deploying a data app'], capstone: 'A deployed dashboard' },
+  { id: 'scraping', phase: 7, free: true, title: 'Web Scraping & Data Collection', icon: 'Sc', color: 6, hours: 6, blurb: 'Get data that has no download button: HTML, APIs, rate limits, robots.txt and ethics.',
+    syllabus: ['HTML and the DOM', 'requests and BeautifulSoup', 'APIs and pagination', 'Dynamic pages (overview)', 'Rate limits, robots.txt and law', 'Cleaning scraped data'], capstone: 'A dataset you collected yourself' },
+
+  /* ---------------- phase 8 ---------------- */
+  { id: 'content', phase: 8, free: true, title: 'Content Creation for Data Professionals', icon: 'Ct', color: 6, hours: 6, blurb: 'Turn projects into posts people read and remember, and measure what works on a 50,000-post dataset: best format, hook length and posting hour.',
+    syllabus: ['Project post shape: hook, problem, method, result, lesson', 'A post linter', 'Platforms: LinkedIn, Instagram, YouTube, X', 'Engagement analytics on 50,000 posts', 'Hook types', 'A weekly content system'], capstone: 'A month of posts with a results review' },
+  { id: 'experiments', phase: 8, free: true, title: 'Experiments, Causal Thinking & Recommenders', icon: 'Ex', color: 4, hours: 10, blurb: 'A/B testing platforms, causal inference and recommender systems: skills companies pay for and few courses teach.',
+    syllabus: ['Experiment design and power', 'Sequential tests and pitfalls', 'Causal diagrams and confounding', 'Uplift and difference-in-differences', 'Collaborative filtering', 'Ranking metrics'], capstone: 'An experiment analysis report' },
+  { id: 'freelance', phase: 8, free: true, title: 'Freelancing, Pricing & Portfolio', icon: 'Fl', color: 5, hours: 5, blurb: 'Find clients, scope work, price it, and deliver data projects professionally.',
+    syllabus: ['Choosing a niche', 'A portfolio that sells', 'Scoping and pricing', 'Contracts and invoices (overview)', 'Delivering and reporting', 'Getting referrals'], capstone: 'A priced service page and two case studies' },
+  { id: 'evals', phase: 5, free: true, title: 'LLM Evaluation, Observability & Guardrails', icon: 'Ev', color: 3, hours: 9, blurb: 'How teams know an AI feature works: golden sets, F1 and intervals, retrieval metrics, LLM judges and their biases, PII redaction, injection rules and release gates.',
+    syllabus: ['Scoring answers with intervals', 'Retrieval and RAG metrics', 'LLM-as-judge and its biases', 'Guardrails and release gates'], capstone: 'An eval harness with a golden set, a judge check and a CI gate for a small assistant' },
+  { id: 'rl', phase: 5, free: true, title: 'Reinforcement Learning, RLHF & DPO', icon: 'Rl', color: 1, hours: 12, blurb: 'Bandits, Q-learning, policy gradients, and how human preferences become a reward: Bradley-Terry, KL-penalised reward and the DPO loss.',
+    syllabus: ['Bandits: explore or exploit', 'Q-learning and value iteration', 'Policy gradients', 'RLHF and DPO'], capstone: 'A bandit and a Q-learner, then a preference-loss comparison of two policies' },
+  { id: 'genmodels', phase: 4, free: true, title: 'Generative Models: Autoencoders & Diffusion', icon: 'Gm', color: 5, hours: 12, blurb: 'Latent spaces, the VAE, and diffusion models written from scratch: forward noise, the denoising step, sampling, guidance and FID.',
+    syllabus: ['Autoencoders and latent space', 'The forward noising process', 'Reverse sampling', 'Guidance and evaluation'], capstone: 'A 1-D diffusion sampler that recovers a data distribution' },
+  { id: 'inference', phase: 5, free: true, title: 'LLM Inference & Efficiency', icon: 'If', color: 4, hours: 10, blurb: 'Why generation is memory-bound: weights and KV-cache memory, int8 and group quantisation, cached decoding, continuous batching and speculative decoding.',
+    syllabus: ['Memory and speed arithmetic', 'Quantisation', 'Attention and the KV cache', 'Batching and speculative decoding'], capstone: 'A cost and latency model for serving a 7B model to 100 users' },
+  { id: 'causal', phase: 3, free: true, title: 'Causal Inference in Practice', icon: 'Ci', color: 6, hours: 10, blurb: 'DAGs and confounders, propensity weighting and balance checks, regression discontinuity, instrumental variables and synthetic controls.',
+    syllabus: ['Graphs, confounders and colliders', 'Propensity scores and IPW', 'Cutoffs and instruments', 'Synthetic controls and robustness'], capstone: 'A causal estimate with balance checks and a sensitivity discussion' },
+  { id: 'respai', phase: 6, free: true, title: 'Responsible AI: Fairness, Privacy & Governance', icon: 'Ra', color: 2, hours: 8, blurb: 'Measure fairness gaps, apply group thresholds, add differential-privacy noise, check k-anonymity, classify risk tiers and red-team a system.',
+    syllabus: ['Fairness metrics', 'Mitigation and trade-offs', 'Privacy: k-anonymity and differential privacy', 'Governance, risk tiers and red-teaming'], capstone: 'A model card with measured group gaps and a mitigation' },
+  { id: 'multimodal', phase: 4, free: true, title: 'Multimodal AI: Vision, Audio & Speech', icon: 'Mm', color: 0, hours: 10, blurb: 'Image patches as tokens, CLIP-style contrastive alignment, spectrograms and mel scales, word error rate, and latency budgets for voice assistants.',
+    syllabus: ['Images as patch tokens', 'Contrastive image-text learning', 'Audio: spectrograms and WER', 'Multimodal pipelines and budgets'], capstone: 'A zero-shot image classifier and a voice-pipeline latency plan' },
+  { id: 'uncertainty', phase: 3, free: true, title: 'Uncertainty: Bayes, Calibration & Conformal Prediction', icon: 'Un', color: 3, hours: 9, blurb: 'Honest error bars: Beta-Binomial updating, bootstrap intervals, expected calibration error, temperature scaling and split conformal prediction.',
+    syllabus: ['Bayesian updating', 'Bootstrap intervals', 'Calibration', 'Conformal prediction'], capstone: 'A regressor with guaranteed-coverage prediction intervals' },
+  { id: 'sysdesign', phase: 9, free: true, title: 'System Design for Data and AI Systems', icon: 'Sd', color: 2, hours: 8, blurb: 'Back-of-envelope sizing, caching, sharding with consistent hashing, rate limiting, retries and queues, and designing recommender and RAG systems with a latency budget.',
+    syllabus: ['Estimating load, storage and cost', 'Caching and sharding', 'Rate limiting, retries and queues', 'Designing ML and RAG systems'], capstone: 'A one-page design for a search or recommendation system with numbers' },
+  { id: 'devops', phase: 9, free: true, title: 'DevOps: CI/CD, Kubernetes and Infrastructure as Code', icon: 'Do', color: 5, hours: 8, blurb: 'Pipelines as graphs, the Kubernetes reconcile loop, declarative infrastructure plans, and SLOs with error budgets.',
+    syllabus: ['CI/CD pipelines', 'Kubernetes: desired state', 'Infrastructure as code', 'Observability and SLOs'], capstone: 'A pipeline plus a deployment spec plus an SLO for a small service' },
+  { id: 'uiux', phase: 9, free: true, title: 'UI/UX and Product Thinking for Data Apps', icon: 'Ux', color: 6, hours: 6, blurb: 'Research users, build visual hierarchy, check contrast and accessibility, design charts people can read, and test usability with numbers.',
+    syllabus: ['Users and jobs to be done', 'Layout, contrast and accessibility', 'Designing charts and dashboards', 'Usability testing'], capstone: 'A usability-tested redesign of one dashboard' },
+];

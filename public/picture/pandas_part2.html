@@ -1,0 +1,1032 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pandas Picture Class — Part 2</title>
+<style>
+:root{
+  --bg:#f6f4ee; --panel:#ffffff; --ink:#1f2430; --muted:#5e6575; --line:#e3ded2;
+  --accent:#e8a317; --accent-ink:#5a3d00; --accent-soft:#fff3d4;
+  --blue:#2f6fde; --blue-soft:#e3ecfd; --green:#1e8f5a; --green-soft:#dcf3e7;
+  --red:#d2453b; --red-soft:#fde4e1; --purple:#7a4cc2; --purple-soft:#eee6fa;
+  --code-bg:#1e2230; --code-ink:#e9ecf3; --code-key:#ffcf66; --code-str:#9ee59e; --code-num:#8fc3ff; --code-com:#8a93a8;
+  --shadow:0 2px 10px rgba(30,30,40,.07);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#15171d; --panel:#1e2129; --ink:#eceef3; --muted:#a2a9b8; --line:#30343f;
+    --accent:#f2b53a; --accent-ink:#ffe2a3; --accent-soft:#3a2f17;
+    --blue:#6d9cff; --blue-soft:#1e2a45; --green:#4cc58a; --green-soft:#183427;
+    --red:#ff7b70; --red-soft:#3e1f1d; --purple:#b393f0; --purple-soft:#2c2440;
+    --code-bg:#0f1117; --shadow:0 2px 10px rgba(0,0,0,.35);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#15171d; --panel:#1e2129; --ink:#eceef3; --muted:#a2a9b8; --line:#30343f;
+  --accent:#f2b53a; --accent-ink:#ffe2a3; --accent-soft:#3a2f17;
+  --blue:#6d9cff; --blue-soft:#1e2a45; --green:#4cc58a; --green-soft:#183427;
+  --red:#ff7b70; --red-soft:#3e1f1d; --purple:#b393f0; --purple-soft:#2c2440;
+  --code-bg:#0f1117; --shadow:0 2px 10px rgba(0,0,0,.35);
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:16px/1.55 "Segoe UI",system-ui,-apple-system,Roboto,sans-serif}
+button{font:inherit;cursor:pointer}
+code,pre,.mono{font-family:Consolas,"Cascadia Code","SF Mono",Menlo,monospace}
+
+.app{display:grid;grid-template-columns:270px 1fr;min-height:100vh}
+aside{background:var(--panel);border-right:1px solid var(--line);padding:20px 14px;position:sticky;top:0;height:100vh;overflow:auto}
+.brand{display:flex;align-items:center;gap:10px;margin:0 6px 18px}
+.brand .logo{font-size:30px}
+.brand h1{font-size:18px;margin:0;line-height:1.2}
+.brand small{color:var(--muted);font-size:13px}
+.toc{list-style:none;margin:0;padding:0}
+.toc button{width:100%;text-align:left;background:none;border:0;color:var(--ink);padding:9px 10px;border-radius:10px;display:flex;gap:10px;align-items:center;font-size:15px}
+.toc button:hover{background:var(--accent-soft)}
+.toc button.active{background:var(--accent);color:#2a1d00;font-weight:600}
+.toc .num{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;background:var(--bg);font-size:12px;flex:none;border:1px solid var(--line)}
+.toc button.active .num{background:#fff6;border-color:transparent}
+.toc .sec{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;padding:14px 10px 4px}
+.toc .done .num{background:var(--green);color:#fff;border-color:transparent}
+.side-foot{margin-top:18px;padding:0 8px;display:flex;gap:8px;flex-wrap:wrap}
+.chip{border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:999px;padding:5px 12px;font-size:13px}
+
+main{padding:28px 32px 60px;max-width:1150px;width:100%}
+.lesson-head{display:flex;align-items:flex-start;gap:16px;margin-bottom:14px}
+.lesson-head .big{font-size:44px;line-height:1}
+.lesson-head h2{margin:0;font-size:28px}
+.lesson-head p{margin:4px 0 0;color:var(--muted);max-width:70ch}
+.story{background:var(--accent-soft);border:1px dashed var(--accent);color:var(--ink);border-radius:14px;padding:12px 16px;margin:10px 0 20px;max-width:80ch}
+.story b{color:var(--accent-ink)}
+
+.stage{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);gap:20px;align-items:start}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);padding:16px}
+.code-card{padding:0;overflow:hidden}
+.code-top{display:flex;align-items:center;gap:6px;padding:10px 14px;background:var(--code-bg);border-bottom:1px solid #ffffff14}
+.dot{width:11px;height:11px;border-radius:50%}
+.code-top .lbl{margin-left:8px;color:var(--code-com);font-size:13px}
+.code-top .copy{margin-left:auto;background:#ffffff14;color:var(--code-ink);border:0;border-radius:8px;padding:3px 10px;font-size:12px}
+pre.code{margin:0;background:var(--code-bg);color:var(--code-ink);padding:16px 18px;min-height:120px;font-size:15px;white-space:pre-wrap;word-break:break-word}
+.tk-k{color:var(--code-key)} .tk-s{color:var(--code-str)} .tk-n{color:var(--code-num)} .tk-c{color:var(--code-com);font-style:italic}
+.caret{display:inline-block;width:8px;height:1.1em;background:var(--accent);vertical-align:text-bottom;animation:blink .8s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+
+.teacher{display:flex;gap:12px;padding:14px 16px;align-items:flex-start}
+.teacher .face{font-size:34px;line-height:1}
+.bubble{background:var(--blue-soft);border-radius:4px 14px 14px 14px;padding:10px 14px;flex:1;animation:pop .35s ease}
+.bubble b{color:var(--blue)}
+
+.controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:14px}
+.btn{border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:10px;padding:8px 14px;font-weight:600}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);color:#2a1d00;border-color:var(--accent)}
+.btn:disabled{opacity:.4;cursor:default}
+.steps-dots{display:flex;gap:6px;margin-left:auto}
+.steps-dots span{width:10px;height:10px;border-radius:50%;background:var(--line);transition:.3s}
+.steps-dots span.on{background:var(--accent);transform:scale(1.25)}
+.steps-dots span.seen{background:var(--accent);opacity:.45}
+
+.board{min-height:340px;display:flex;flex-direction:column;gap:14px}
+.board-title{font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;font-weight:600}
+.tables{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.arrow{font-size:28px;color:var(--accent);animation:nudge 1s ease-in-out infinite}
+@keyframes nudge{50%{transform:translateX(5px)}}
+.tbl-wrap{overflow-x:auto;max-width:100%}
+.tbl-cap{font-size:13px;color:var(--muted);margin:0 0 6px;font-weight:600}
+table.df{border-collapse:separate;border-spacing:0;font-size:14.5px;background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+table.df th,table.df td{padding:7px 12px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap;transition:background .4s,color .4s,opacity .4s}
+table.df thead th{background:var(--bg);font-weight:700}
+table.df tbody th{background:var(--bg);color:var(--muted);font-weight:600;text-align:center;min-width:36px}
+table.df tr:last-child td,table.df tr:last-child th{border-bottom:0}
+td.num{text-align:right;font-variant-numeric:tabular-nums}
+.hl{background:var(--accent-soft)!important;box-shadow:inset 0 0 0 2px var(--accent);animation:pulse 1.2s ease 2}
+th.hl{color:var(--accent-ink)!important}
+@keyframes pulse{50%{box-shadow:inset 0 0 0 3px var(--accent)}}
+.hl-idx{background:var(--purple-soft)!important;color:var(--purple)!important;box-shadow:inset 0 0 0 2px var(--purple)}
+.hl-head{background:var(--blue-soft)!important;color:var(--blue)!important;box-shadow:inset 0 0 0 2px var(--blue)}
+tr.dim td,tr.dim th{opacity:.18;text-decoration:line-through}
+.new{animation:grow .6s ease both;background:var(--green-soft)!important;color:var(--green)}
+@keyframes grow{from{opacity:0;transform:scale(.6)}to{opacity:1;transform:none}}
+.gone{background:var(--red-soft)!important;color:var(--red)!important;text-decoration:line-through;animation:shake .5s ease 2}
+@keyframes shake{25%{transform:translateX(-3px)}75%{transform:translateX(3px)}}
+.nan{background:var(--red-soft)!important;color:var(--red)!important;font-style:italic;font-weight:600}
+.fixed{background:var(--green-soft)!important;color:var(--green)!important;font-weight:700;animation:grow .6s ease both}
+.t{color:var(--green);font-weight:700} .f{color:var(--red);font-weight:700}
+.g1{background:#2f6fde22!important} .g2{background:#e8a31726!important} .g3{background:#1e8f5a24!important}
+.legend{display:flex;gap:10px;flex-wrap:wrap;font-size:13px}
+.legend span{padding:2px 10px;border-radius:999px}
+
+.out{background:var(--code-bg);color:var(--code-ink);border-radius:12px;padding:12px 14px;font-size:14px;white-space:pre;overflow-x:auto;animation:pop .4s ease}
+.out:before{content:"Output ▸";display:block;color:var(--code-com);font-size:11px;margin-bottom:4px;letter-spacing:.06em}
+@keyframes pop{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+.dict{display:flex;gap:12px;flex-wrap:wrap}
+.box{border:2px solid var(--blue);border-radius:12px;padding:8px 12px;background:var(--blue-soft);animation:grow .5s ease both}
+.box .k{font-weight:700;color:var(--blue);margin-bottom:4px}
+.box .v{display:flex;gap:6px;flex-wrap:wrap}
+.box .v span{background:var(--panel);border-radius:6px;padding:1px 8px;font-size:14px}
+.file{border:2px solid var(--green);background:var(--green-soft);border-radius:4px 22px 12px 12px;padding:10px 14px;min-width:200px;animation:grow .5s ease both}
+.file .fname{font-weight:700;color:var(--green);margin-bottom:6px}
+.file pre{margin:0;font-size:13.5px;white-space:pre}
+.file pre span{display:block;animation:pop .4s ease both}
+.ready{font-size:22px;padding:30px;text-align:center;animation:grow .5s ease both}
+.ready .em{font-size:60px;display:block}
+.tip{border-left:4px solid var(--purple);background:var(--purple-soft);padding:8px 12px;border-radius:0 10px 10px 0;font-size:14.5px;animation:pop .4s ease}
+
+.quiz{margin-top:26px}
+.quiz h3{margin:0 0 6px}
+.opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px;margin-top:10px}
+.opt{text-align:left;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:10px;padding:10px 12px}
+.opt.right{background:var(--green-soft);border-color:var(--green)}
+.opt.wrong{background:var(--red-soft);border-color:var(--red)}
+.feedback{margin-top:10px;font-weight:600}
+.remember{margin-top:20px}
+.remember ul{margin:6px 0 0;padding-left:20px}
+.remember code{background:var(--bg);padding:1px 6px;border-radius:5px;border:1px solid var(--line)}
+.nav-bottom{display:flex;justify-content:space-between;margin-top:26px;gap:10px}
+
+.menu-btn{display:none}
+@media (max-width:900px){
+  .app{grid-template-columns:1fr}
+  aside{position:fixed;inset:0 30% 0 0;z-index:5;transform:translateX(-105%);transition:.3s;height:100vh}
+  aside.open{transform:none}
+  .menu-btn{display:inline-block;margin-bottom:12px}
+  main{padding:16px 16px 50px}
+  .stage{grid-template-columns:1fr}
+  .lesson-head h2{font-size:23px}
+  .steps-dots{margin-left:0;width:100%}
+}
+
+a.chip{text-decoration:none;display:inline-block}
+.g4{background:#7a4cc224!important}
+.discuss{margin-top:20px;border-left:5px solid var(--purple)}
+.discuss h3{margin:0}
+.discuss ol{margin:8px 0 0;padding-left:22px}
+.discuss li{margin:4px 0}
+.discuss code,.story code,.bubble code{background:var(--bg);padding:1px 6px;border-radius:5px;border:1px solid var(--line)}
+.bars{display:flex;flex-direction:column;gap:7px}
+.bar-row{display:grid;grid-template-columns:110px 1fr 90px;align-items:center;gap:10px;font-size:14px}
+.bar-lbl{text-align:right;color:var(--muted);font-weight:600}
+.bar{display:block;height:20px;border-radius:6px;background:var(--accent);transform-origin:left;animation:barGrow .7s ease both}
+.bar-val{font-variant-numeric:tabular-nums;font-weight:600}
+@keyframes barGrow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+.flow{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.flow-chip{background:var(--blue-soft);border:2px solid var(--blue);border-radius:999px;padding:6px 14px;font-weight:600;animation:grow .5s ease both}
+.flow-arrow{color:var(--accent);font-size:20px}
+.flags{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.flags li{background:var(--red-soft);border-left:4px solid var(--red);border-radius:0 10px 10px 0;padding:8px 12px;animation:pop .4s ease both}
+.numline{position:relative;height:90px;margin:10px 4px 0;border-bottom:3px solid var(--line)}
+.nl-dot{position:absolute;bottom:8px;width:14px;height:14px;border-radius:50%;background:var(--blue);animation:grow .4s ease both}
+.nl-dot.out{background:var(--red);width:20px;height:20px;animation:grow .4s ease .6s both,shake .5s ease 1.1s 2}
+.nl-box{position:absolute;bottom:4px;height:24px;border:2px solid var(--green);background:var(--green-soft);border-radius:6px}
+.nl-lbl{position:absolute;bottom:-24px;font-size:12px;color:var(--muted);white-space:nowrap}
+.joins{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside id="side">
+    <div class="brand"><span class="logo">🐼</span><div><h1>Pandas Class · Part 2</h1><small>Deeper skills + a real business case</small></div></div>
+    <ul class="toc" id="toc"></ul>
+    <div class="side-foot">
+      <a class="chip" href="pandas_tutorial.html">⬅ Part 1</a>
+      <button class="chip" id="themeBtn">🌓 Theme</button>
+      <button class="chip" id="resetBtn">↺ Reset progress</button>
+    </div>
+  </aside>
+  <main id="main"></main>
+</div>
+
+<script>
+/* ---------- Part 2 data ---------- */
+const copy = r => r.map(x => x.slice());
+const range = n => [...Array(n).keys()];
+function T(cols, rows, o = {}) { return Object.assign({cols, rows, idx: range(rows.length)}, o); }
+
+/* 8 sample ChaiCart orders (after cleaning) — the full data has 60 orders */
+const OCOLS = ["OrderID","OrderDate","City","Product","Qty","UnitPrice","Discount","Payment","DeliveryMins","Rating"];
+const OS = [
+  [1001,"2024-01-02","Mumbai","Veg Sandwich",3,90,0,"UPI",48,5],
+  [1002,"2024-01-03","Delhi","Mango Lassi",1,70,15,"UPI",49,4],
+  [1003,"2024-01-09","Mumbai","Paneer Wrap",3,150,15,"UPI",23,4],
+  [1004,"2024-01-10","Pune","Brownie",1,80,0,"UPI",20,5],
+  [1005,"2024-01-12","Mumbai","Samosa",4,25,0,"Card",31,"NaN"],
+  [1006,"2024-01-17","Bengaluru","Mango Lassi",1,70,0,"Card",25,4],
+  [1008,"2024-01-24","Pune","Paneer Wrap",5,150,15,"Card",20,5],
+  [1010,"2024-01-28","Pune","Green Tea",3,60,5,"Card",20,5],
+];
+const sub = (cols, rows = OS) => { const ix = cols.map(c => OCOLS.indexOf(c)); return rows.map(r => ix.map(i => r[i])); };
+const TS = (cols, o = {}, rows = OS) => T(cols, sub(cols, rows), o);
+const keep = f => OS.map((r, i) => f(r) ? -1 : i).filter(i => i >= 0);          // rows to dim
+const R = r => r[4] * r[5] * (1 - r[6] / 100);                                  // revenue
+const r1 = v => Math.round(v * 10) / 10;
+const CC = {Delhi:"g1", Mumbai:"g2", Pune:"g3", Bengaluru:"g4"};
+const cityCls = rows => Object.fromEntries(rows.map((r, i) => [i, CC[r.find(v => CC[v])] || ""]));
+const WD = d => ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"][new Date(d + "T00:00:00Z").getUTCDay()];
+
+const MARKS = [["Aarav",85],["Diya",92],["Rohan",78],["Isha",88],["Kabir",65]];
+const MN = MARKS.map(m => m[0]);
+const ser = (vals, idx, name = "value", o = {}) => Object.assign(T([name], vals.map(v => [v]), o), {idx});
+
+const SCORES = [[80,70,90],[60,85,75],[95,88,92]];
+const SN = ["Aarav","Diya","Rohan"], SUBJ = ["Maths","Science","English"];
+
+const MS_COLS = ["OrderID","City","Product","Qty","Payment","DeliveryMins","Rating"];
+const MS = [
+  [1005,"Mumbai","Samosa",4,"Card",31,"NaN"],
+  [1007," mumbai","Masala Chai",2,"UPI",15,5],
+  [1010,"Pune","Green Tea",3,"Card","NaN",5],
+  [1013,"Mumbai","Filter Coffee",250,"Cash",15,5],
+  [1016,"Pune","Cold Coffee",4,"Cash",16,4],
+  [1023,"Delhi","Filter Coffee",1,"NaN",16,5],
+  [1016,"Pune","Cold Coffee",4,"Cash",16,4],
+];
+const swap = (rows, r, c, v) => { const x = copy(rows); x[r][c] = v; return x; };
+
+const LONG = [["Bengaluru","2024-01",325],["Bengaluru","2024-02",380],["Delhi","2024-01",60],["Delhi","2024-02",850],["Mumbai","2024-01",832],["Mumbai","2024-02",202]];
+const EXAM = [["Aarav","9A",78,82,74],["Diya","9A",92,85,95],["Rohan","9B",65,70,80],["Isha","9B",88,91,84]];
+const EXLONG = []; ["Maths","Science","English"].forEach((s, k) => EXAM.forEach(e => EXLONG.push([e[0], e[1], s, e[2 + k]])));
+
+const bars = (data, unit = "") => { const mx = Math.max(...data.map(d => d[1]));
+  return `<div class="bars">${data.map((d, i) => `<div class="bar-row"><span class="bar-lbl">${d[0]}</span><span class="bar" style="width:${Math.max(4, d[1] / mx * 100)}%;animation-delay:${i * .12}s"></span><span class="bar-val">${unit}${d[1].toLocaleString("en-IN")}</span></div>`).join("")}</div>`; };
+const chips = (items, cls = "") => `<div class="flow">${items.map((t, i) => `<span class="flow-chip ${cls}" style="animation-delay:${i * .15}s">${t}</span>`).join(`<span class="flow-arrow">➜</span>`)}</div>`;
+const flags = items => `<ul class="flags">${items.map((t, i) => `<li style="animation-delay:${i * .15}s">${t}</li>`).join("")}</ul>`;
+
+/* ---------- the 15 lessons ---------- */
+const LESSONS = [
+/* ===== 1 ===== */
+{
+  part:"A", title:"The Series Data Structure", icon:"📏",
+  sub:"One labelled column — the building block of every DataFrame.",
+  story:"A <b>Series</b> is <b>one column of data with labels</b>. Think of a row of <b>lockers</b> 🔐: every locker has a <b>label on the door</b> (the index) and <b>something inside</b> (the value).",
+  steps:[
+    {code:`marks = pd.Series([85, 92, 78, 88, 65])
+marks`,
+     say:"We give pandas a plain list. It becomes a Series. On the left, in <b style='color:var(--purple)'>purple</b>, pandas adds labels 0, 1, 2… automatically — that's the <b>index</b>.",
+     board:()=>({tables:[ser(MARKS.map(m=>m[1]),range(5),"marks",{hlIdx:true,newRows:range(5)})]})},
+    {code:`marks.values   # the data
+marks.index    # the labels
+marks.dtype    # the type`,
+     say:"A Series has 4 parts: <b>values</b>, <b>index</b>, <b>dtype</b> (type of the values) and an optional <b>name</b>. <b>int64</b> means whole numbers.",
+     board:()=>({tables:[ser(MARKS.map(m=>m[1]),range(5),"marks",{hlIdx:true})],out:`[85 92 78 88 65]\nRangeIndex(start=0, stop=5, step=1)\nint64`})},
+    {code:`marks = pd.Series([85, 92, 78, 88, 65],
+                  index=["Aarav", "Diya", "Rohan", "Isha", "Kabir"],
+                  name="Marks")`,
+     say:"Numbers 0–4 don't tell us much. Let's use <b>student names</b> as the index. Now every locker has a meaningful label!",
+     board:()=>({tables:[ser(MARKS.map(m=>m[1]),MN,"Marks",{hlIdx:true})]})},
+    {code:`price = pd.Series({"Masala Chai": 40, "Samosa": 25, "Brownie": 80})`,
+     say:"Another way: from a <b>dictionary</b>. The <b>keys</b> become the index, the <b>values</b> become the data.",
+     board:()=>({html:`<div class="dict"><div class="box"><div class="k">"Masala Chai"</div><div class="v"><span>40</span></div></div><div class="box" style="animation-delay:.2s"><div class="k">"Samosa"</div><div class="v"><span>25</span></div></div><div class="box" style="animation-delay:.4s"><div class="k">"Brownie"</div><div class="v"><span>80</span></div></div></div>`,
+       tables:[ser([40,25,80],["Masala Chai","Samosa","Brownie"],"price",{newRows:[0,1,2],hlIdx:true})]})},
+    {code:`branch_a = pd.Series({"Chai": 120, "Coffee": 80, "Samosa": 60})
+branch_b = pd.Series({"Coffee": 90, "Samosa": 70, "Lassi": 40})
+branch_a + branch_b`,
+     say:"⭐ Two café branches. pandas adds by <b>matching labels</b>, not positions. <b>Chai</b> is only in A and <b>Lassi</b> only in B, so pandas can't add them → <b style='color:var(--red)'>NaN</b>.",
+     board:()=>({tables:[ser([120,80,60],["Chai","Coffee","Samosa"],"branch_a"),ser([90,70,40],["Coffee","Samosa","Lassi"],"branch_b"),
+       ser(["NaN",170,"NaN",130],["Chai","Coffee","Lassi","Samosa"],"a + b",{newCols:["a + b"]})]})},
+    {code:`branch_a.add(branch_b, fill_value=0)`,
+     say:"<b>fill_value=0</b> says: \"if a label is missing on one side, treat it as 0\". Now the totals are complete.",
+     board:()=>({tables:[ser([120,170,40,130],["Chai","Coffee","Lassi","Samosa"],"total",{cells:{"0,0":"fixed","2,0":"fixed"}})],
+       tip:"A Python <b>list</b> adds by position. A <b>Series</b> adds by <b>label</b>. That's the big difference!"})},
+  ],
+  quiz:{q:"Series A has labels [x, y], Series B has [y, z]. What is (A + B) at label x?",opts:["A's value of x","0","NaN","An error"],a:2,why:"x is missing in B, so pandas can't add it and gives NaN (unless you use fill_value)."},
+  remember:["<code>pd.Series(list, index=[...], name=...)</code>","<code>pd.Series(dict)</code> — keys become the index","<code>.values</code>, <code>.index</code>, <code>.dtype</code>","Series match by <b>label</b> → use <code>add(..., fill_value=0)</code>"],
+  discuss:["Branch B <b>forgot</b> to send its Chai numbers. Is it correct to put 0? What would be more honest?","Why is \"label matching\" useful when you combine sales from many shops?"]
+},
+/* ===== 2 ===== */
+{
+  part:"A", title:"Querying a Series", icon:"🔎",
+  sub:"Ask the Series a question, get back only what you need.",
+  story:"You already know <b>loc</b>, <b>iloc</b> and masks like <b>s[s > 80]</b> from Part 1 — they work the same on a Series. Here are the <b>new</b> questions: \"Who is between 70 and 90?\" \"<b>Who</b> is the topper?\" \"<b>What share</b> passed?\"",
+  steps:[
+    {code:`marks[marks.between(70, 90)]`, say:"<b>between(a, b)</b> = a ≤ value ≤ b, in one short call (both ends included).",
+     board:()=>({tables:[ser(MARKS.map(m=>m[1]),MN,"Marks",{hlRows:[0,2,3],dimRows:[1,4]})]})},
+    {code:`marks.idxmax(), marks.max()
+marks.idxmin()`, say:"<b>max()</b> tells the top score, but <b>idxmax()</b> tells <b>who</b> — it returns the <b>label</b>.",
+     board:()=>({tables:[ser(MARKS.map(m=>m[1]),MN,"Marks",{cells:{"1,0":"fixed","4,0":"nan"},hlIdx:true})],out:`('Diya', 92)\n'Kabir'`})},
+    {code:`(marks > 80).sum()     # how many
+(marks > 80).mean()    # what share`, say:"Turn a mask into a <b>number</b>: True counts as 1, so <b>sum()</b> = how many, <b>mean()</b> = what fraction.",
+     board:()=>({tables:[Object.assign(T(["Marks","> 80"],MARKS.map(m=>[m[1],m[1]>80]),{newCols:["> 80"]}),{idx:MN})],out:`3\n0.6`})},
+    {code:`marks.where(marks >= 70)`, say:"<b>where</b> keeps the <b>shape</b> but hides values that fail the test → NaN. Useful for charts and reports.",
+     board:()=>({tables:[ser([85,92,78,88,"NaN"],MN,"Marks")]})},
+    {code:`"Diya" in marks        # True
+92 in marks            # False!
+92 in marks.values     # True`, say:"⚠️ <b>Trap!</b> <b>in</b> checks the <b>index (labels)</b>, not the values. To search values use <b>.values</b>.",
+     board:()=>({tables:[ser(MARKS.map(m=>m[1]),MN,"Marks",{hlIdx:true})],out:`True\nFalse\nTrue`})},
+    {code:`s = pd.Series(["ten", "twenty", "thirty"], index=[3, 2, 1])
+s.loc[1]     # label 1
+s.iloc[1]    # position 1`, say:"⚠️ <b>Trap 2:</b> when labels are numbers, <b>loc[1]</b> (label 1 → 'thirty') and <b>iloc[1]</b> (2nd position → 'twenty') give <b>different</b> answers. Always say which one you mean!",
+     board:()=>({tables:[ser(["ten","twenty","thirty"],[3,2,1],"s",{hlIdx:true,cells:{"2,0":"hl","1,0":"fixed"}})],out:`loc[1]  → thirty\niloc[1] → twenty`})},
+  ],
+  quiz:{q:"marks has names as the index. What does 92 in marks return (92 is Diya's score)?",opts:["True","False","92","Diya"],a:1,why:"in checks the index (labels), not the values. Use 92 in marks.values instead."},
+  remember:["<code>s.between(a, b)</code>","<code>idxmax()</code> / <code>idxmin()</code> — <b>who</b>, not how much","<code>(mask).sum()</code> = count, <code>(mask).mean()</code> = share","<code>s.where(cond)</code> keeps the shape","<code>in</code> checks labels, not values!","Number labels: say <code>loc</code> or <code>iloc</code>"],
+  discuss:["A teacher used roll numbers as the index. Why could <code>s[1]</code> confuse her? Which should she use?","When would you prefer <code>where()</code> (keeps all rows) over a filter (drops rows)?"]
+},
+/* ===== 3 ===== */
+{
+  part:"A", title:"The DataFrame Data Structure", icon:"🧱",
+  sub:"Many Series glued side by side, sharing one index.",
+  story:"A <b>DataFrame</b> is like a <b>bookshelf</b> 📚: every book is a <b>Series</b> (a column), and all books share the same <b>page numbers</b> (the index).",
+  steps:[
+    {code:`age  = pd.Series([15, 14, 16, 15, 14], index=marks.index)
+city = pd.Series(["Delhi", "Mumbai", "Delhi", "Pune", "Mumbai"], index=marks.index)
+df = pd.DataFrame({"Age": age, "City": city, "Marks": marks})`,
+     say:"Three separate Series with the <b>same labels</b>… glued together become a <b>DataFrame</b>.",
+     board:()=>({tables:[ser([15,14,16,15,14],MN,"Age"),ser(["Delhi","Mumbai","Delhi","Pune","Mumbai"],MN,"City"),ser(MARKS.map(m=>m[1]),MN,"Marks"),
+       Object.assign(T(["Age","City","Marks"],MARKS.map((m,i)=>[[15,14,16,15,14][i],["Delhi","Mumbai","Delhi","Pune","Mumbai"][i],m[1]]),{newCols:["Age","City","Marks"],cap:"df"}),{idx:MN})]})},
+    {code:`type(df)            # DataFrame
+type(df["Marks"])   # Series`, say:"Take one column out of a DataFrame → you get a <b>Series</b> back.",
+     board:()=>({tables:[Object.assign(T(["Age","City","Marks"],MARKS.map((m,i)=>[[15,14,16,15,14][i],["Delhi","Mumbai","Delhi","Pune","Mumbai"][i],m[1]]),{hlCols:["Marks"]}),{idx:MN})],out:`<class 'pandas.DataFrame'>\n<class 'pandas.Series'>`})},
+    {code:`records = [
+    {"Product": "Masala Chai", "Price": 40},
+    {"Product": "Samosa", "Price": 25, "Spicy": True},
+    {"Product": "Brownie", "Price": 80, "Spicy": False},
+]
+pd.DataFrame(records)`,
+     say:"Apps and websites send data as <b>records</b> (one dictionary per row). Masala Chai has no 'Spicy' key → <b style='color:var(--red)'>NaN</b>.",
+     board:()=>({tables:[T(["Product","Price","Spicy"],[["Masala Chai",40,"NaN"],["Samosa",25,true],["Brownie",80,false]],{newRows:[0,1,2]})]})},
+    {code:`scores = pd.DataFrame(
+    np.array([[80, 70, 90], [60, 85, 75], [95, 88, 92]]),
+    index=["Aarav", "Diya", "Rohan"],
+    columns=["Maths", "Science", "English"])`,
+     say:"From a <b>NumPy array</b> (common in maths and machine learning). We give the row and column labels ourselves.",
+     board:()=>({tables:[Object.assign(T(SUBJ,SCORES,{newRows:[0,1,2]}),{idx:SN})]})},
+    {code:`scores.mean(axis=0)    # ↓ down each column`,
+     say:"⭐ <b>axis=0</b> goes <b>DOWN the rows</b> → one answer <b>per column</b>. Here: the average of each subject.",
+     board:()=>({tables:[Object.assign(T(SUBJ,SCORES,{hlHead:true}),{idx:SN}),Object.assign(T(["mean"],[[78.33],[81.0],[85.67]],{newCols:["mean"]}),{idx:SUBJ})]})},
+    {code:`scores["Total"] = scores.sum(axis=1)    # → across each row`,
+     say:"<b>axis=1</b> goes <b>ACROSS the columns</b> → one answer <b>per row</b>. Here: each student's total.",
+     board:()=>({tables:[Object.assign(T([...SUBJ,"Total"],SCORES.map(r=>[...r,r[0]+r[1]+r[2]]),{newCols:["Total"],hlIdx:true}),{idx:SN})],tip:"Memory trick: <b>axis=0 ↓</b> (columns get an answer), <b>axis=1 →</b> (rows get an answer)."})},
+    {code:`scores.T`, say:"<b>.T</b> (transpose) flips the table: rows become columns and columns become rows.",
+     board:()=>({tables:[Object.assign(T(SN,[0,1,2].map(c=>SCORES.map(r=>r[c])),{newCols:SN}),{idx:SUBJ})]})},
+  ],
+  quiz:{q:"You want ONE total per student (per row). Which axis?",opts:["axis=0","axis=1","axis=2","No axis needed"],a:1,why:"axis=1 goes across the columns, giving one answer per row."},
+  remember:["DataFrame = Series glued together, same index","<code>df[\"col\"]</code> → a Series","List of dicts → missing keys become NaN","<code>axis=0</code> ↓ per column, <code>axis=1</code> → per row","<code>df.T</code> — transpose"],
+  discuss:["A report card needs total per student, and the principal wants the average per subject. Which axis for each?","Why do apps send data as records (dicts) instead of tables?"]
+},
+/* ===== 4 ===== */
+{
+  part:"A", title:"DataFrame Indexing and Loading", icon:"📥",
+  sub:"Load real, messy files the right way.",
+  story:"Meet <b>ChaiCart ☕</b>, a café chain that delivers in 4 cities. Its order file is <b>messy</b>, like real life. Loading it <b>correctly</b> saves hours of cleaning later.",
+  steps:[
+    {code:`raw = pd.read_csv("data/orders.csv")
+raw.dtypes`,
+     say:"The lazy way. Look at the types: <b>OrderDate</b> is plain text, and <b>Rating</b> is text too — but ratings should be numbers! Something is wrong.",
+     board:()=>({file:{name:"📄 orders.csv",lines:["OrderID,OrderDate,…,Rating","1001,2024-01-02,…,5.0","1002,2024-01-03,…,4.0","1028,2024-03-22,…,?"]},fileFirst:true,
+       out:`OrderID           int64\nOrderDate           str   ← should be a date\nCity                str\nQty               int64\n…\nRating              str   ← should be a number!`})},
+    {code:`raw["Rating"].unique()`, say:"Someone typed <b>\"?\"</b> for a missing rating. One junk value turns the <b>whole column</b> into text 😬.",
+     board:()=>({tables:[T(["OrderID","Rating"],[[1001,"5.0"],[1005,"NaN"],[1028,"?"]],{cells:{"2,1":"nan"}})],out:`['5.0', '4.0', nan, '3.0', '?']`})},
+    {code:`orders = pd.read_csv(
+    "data/orders.csv",
+    parse_dates=["OrderDate"],
+    na_values=["?", "NA", ""])`,
+     say:"The smart way: <b>parse_dates</b> turns the column into real dates, and <b>na_values</b> tells pandas \"treat '?' as missing\".",
+     board:()=>({tables:[T(["OrderID","Rating (raw)"],[[1001,"5.0"],[1005,"NaN"],[1028,"?"]]),T(["OrderID","Rating"],[[1001,5.0],[1005,"NaN"],[1028,"NaN"]],{cells:{"2,1":"fixed"}})],arrow:true,
+       out:`OrderDate    datetime64\nRating          float64  ✅`})},
+    {code:`orders_by_id = pd.read_csv("data/orders.csv", index_col="OrderID", ...)
+orders_by_id.loc[1013]`,
+     say:"<b>index_col</b> makes a column the row labels. Now we can look up an order directly by its ID.",
+     board:()=>({tables:[Object.assign(T(["City","Product","Qty"],[["Delhi","Filter Coffee",5],["Pune","Filter Coffee",4],["Mumbai","Filter Coffee",250]],{hlIdx:true,hlRows:[2]}),{idx:[1011,1012,1013]})],tip:"Qty = 250? That looks strange… we'll investigate in Topic 9."})},
+    {code:`orders_by_id.index.is_unique
+orders_by_id.loc[1016]`,
+     say:"🕵️ Order <b>1016</b> comes back <b>twice</b>! The index is not unique — there's a <b>duplicate</b> row. Checking <b>is_unique</b> is a great habit.",
+     board:()=>({tables:[Object.assign(T(["City","Product","Qty"],[["Pune","Cold Coffee",4],["Pune","Cold Coffee",4]],{hlRows:[0,1],hlIdx:true}),{idx:[1016,1016]})],out:`False`})},
+    {code:`pd.read_csv("data/orders.csv", nrows=3)`,
+     say:"Big file (millions of rows)? <b>nrows</b> reads only the first few rows from disk — a quick peek without waiting.",
+     board:()=>({tables:[T(["OrderID","Product","Qty"],[[1001,"Veg Sandwich",3],[1002,"Mango Lassi",1],[1003,"Paneer Wrap",3]],{newRows:[0,1,2],cap:"some columns hidden"})]})},
+    {code:`branch = pd.read_csv(StringIO(text), sep=";")
+branch["Date"] = pd.to_datetime(branch["Date"], format="%d-%m-%Y")`,
+     say:"Files from other systems may use <b>;</b> instead of commas, and dates as <b>day-month-year</b>. Tell pandas with <b>sep</b> and <b>format</b>.",
+     board:()=>({file:{name:"📄 branch.txt",lines:["Branch;Sales;Date","Delhi;12500;05-01-2024","Mumbai;18200;06-01-2024","Pune;9300;07-01-2024"]},fileFirst:true,
+       tables:[T(["Branch","Sales","Date"],[["Delhi",12500,"2024-01-05"],["Mumbai",18200,"2024-01-06"],["Pune",9300,"2024-01-07"]],{newCols:["Date"]})]})},
+  ],
+  quiz:{q:"A column has numbers but someone typed \"?\" for missing values. Which read_csv option fixes it?",opts:["parse_dates","na_values=[\"?\"]","index_col","usecols"],a:1,why:"na_values tells pandas which strings mean 'missing', so they become NaN and the column stays numeric."},
+  remember:["<code>parse_dates=[...]</code> — real dates","<code>na_values=[\"?\"]</code> — junk → NaN","<code>index_col=\"ID\"</code> — row labels","<code>nrows</code>, <code>sep</code>, <code>format=</code> for dates","Check <code>df.index.is_unique</code>","Others: <code>read_excel</code>, <code>read_json</code>, <code>read_sql</code>, <code>read_html</code>"],
+  discuss:["Is <code>03-04-2024</code> the 3rd of April or the 4th of March? Why must you know the date format before loading?","Why should you NOT just open the CSV in Excel and fix '?' by hand?"]
+},
+/* ===== 5 ===== */
+{
+  part:"A", title:"Querying a DataFrame", icon:"❓",
+  sub:"Masks, NOT, text search, and query().",
+  story:"In Part 1 you filtered with masks, <b>&</b>, <b>|</b> and <b>isin</b>. New tools: <b>loc[mask, columns]</b>, <b>~</b> (NOT), <b>case=False</b>, <b>query()</b>, and turning a mask into a number. We use <b>8 sample orders</b> from ChaiCart so you can see every row move.",
+  steps:[
+    {code:`orders.loc[(orders["Qty"] >= 3) & (orders["Discount"] > 0),
+           ["OrderID", "Product", "Qty", "Discount"]]`,
+     say:"<b>loc[mask, columns]</b> picks the matching rows AND only the columns we need — in <b>one step</b>.",
+     board:()=>({tables:[TS(["OrderID","Product","Qty","Discount"],{dimRows:keep(r=>r[4]>=3&&r[6]>0),hlCols:["Qty","Discount"]})]})},
+    {code:`orders[~orders["City"].isin(["Mumbai", "Pune"])]`, say:"<b>~</b> means <b>NOT</b>. \"Cities that are NOT Mumbai or Pune.\"",
+     board:()=>({tables:[TS(["OrderID","City","Product"],{dimRows:keep(r=>!["Mumbai","Pune"].includes(r[2])),hlCols:["City"],rowCls:cityCls(OS)})],legend:true})},
+    {code:`orders[orders["Product"].str.contains("paneer", case=False)]`, say:"In Part 1, contains was <b>case-sensitive</b>. <b>case=False</b> ignores capital letters, so 'paneer' finds 'Paneer Wrap'.",
+     board:()=>({tables:[TS(["OrderID","Product","Qty"],{dimRows:keep(r=>/paneer/i.test(r[3])),hlCols:["Product"]})]})},
+    {code:`min_qty = 3
+orders.query("Payment == 'Card' and Qty >= @min_qty")`, say:"<b>query()</b> lets you write the rule like a sentence. Use <b>@</b> to use a Python variable inside.",
+     board:()=>({tables:[TS(["OrderID","Product","Qty","Payment"],{dimRows:keep(r=>r[7]==="Card"&&r[4]>=3)})]})},
+    {code:`(orders["Payment"] == "UPI").sum()
+(orders["Payment"] == "UPI").mean()`, say:"Turn a mask into a <b>number</b>: <b>sum()</b> counts the Trues, <b>mean()</b> gives the share. (8 samples here; on all 60 orders, UPI = 44%.)",
+     board:()=>({tables:[Object.assign(TS(["OrderID","Payment"]),{}),T(["== 'UPI'"],OS.map(r=>[r[7]==="UPI"]),{newCols:["== 'UPI'"]})],out:`4\n0.5`})},
+  ],
+  quiz:{q:"How do you write \"NOT paid by cash\"?",opts:["df[not df['Payment'] == 'Cash']","df[~(df['Payment'] == 'Cash')]","df[df['Payment'] != 'Cash'] only works in query","df.drop('Cash')"],a:1,why:"~ flips True/False on a mask. (df['Payment'] != 'Cash' also works!)"},
+  remember:["<code>~</code> = NOT","<code>df.loc[mask, [cols]]</code> — rows and columns in one step","<code>between</code> on dates, <code>str.contains(case=False)</code>","<code>df.query(\"a == 'x' and b >= @var\")</code>","<code>mask.sum()</code> = count, <code>mask.mean()</code> = share"],
+  discuss:["The City column has <code>\" mumbai\"</code> and <code>\"MUMBAI \"</code>. What goes wrong with <code>orders[\"City\"] == \"Mumbai\"</code>?","When is <code>query()</code> easier to read than masks? When is it harder?"]
+},
+/* ===== 6 ===== */
+{
+  part:"A", title:"Indexing a DataFrame", icon:"🏷️",
+  sub:"set_index, at, date slicing, MultiIndex, reindex.",
+  story:"The <b>index</b> is the <b>name tag</b> of every row. A good index makes looking things up fast and your code easy to read — like finding a book by its <b>call number</b> in a library.",
+  steps:[
+    {code:`by_id = orders.set_index("OrderID")`, say:"<b>set_index</b> moves a column into the index. OrderID is now the row label.",
+     board:()=>({tables:[Object.assign(TS(["City","Product","Qty"],{hlIdx:true}),{idx:OS.map(r=>r[0])})]})},
+    {code:`by_id.at[1005, "Product"]`, say:"<b>at[row, column]</b> grabs <b>one single cell</b> by label, super fast. (<b>iat</b> does the same by position.)",
+     board:()=>({tables:[Object.assign(TS(["City","Product","Qty"],{cells:{"4,1":"hl"}}),{idx:OS.map(r=>r[0])})],out:`Samosa`})},
+    {code:`by_date = orders.set_index("OrderDate").sort_index()
+by_date.loc["2024-02"]`,
+     say:"⭐ With a <b>date index</b>, you can slice by text: <b>\"2024-02\"</b> means <b>all of February</b>!",
+     board:()=>({tables:[Object.assign(T(["Product","Qty"],[["Cookies Pack",3],["Green Tea",3],["Filter Coffee",5],["Filter Coffee",4],["Filter Coffee",250],["Green Tea",1]],{dimRows:[0,1],hlRows:[2,3,4,5],hlIdx:true}),{idx:["2024-01-27","2024-01-28","2024-02-02","2024-02-05","2024-02-08","2024-02-09"]})]})},
+    {code:`sales = pd.DataFrame({...}).set_index(["Branch", "Quarter"])`,
+     say:"A <b>MultiIndex</b> has <b>2 levels</b> of labels: Branch → Quarter. Like a folder inside a folder 📁.",
+     board:()=>({tables:[T(["Branch","Quarter","Revenue","Orders"],[["Delhi","Q1",52000,410],["","Q2",61000,480],["Mumbai","Q1",70000,530],["","Q2",66000,505],["Pune","Q1",30000,260],["","Q2",41000,330]],
+       {cells:Object.fromEntries(range(6).flatMap(r=>[[`${r},0`,"hl-idx"],[`${r},1`,"hl-idx"]]))})]})},
+    {code:`sales.loc["Delhi"]`, say:"Ask for the outer level → you get everything inside the <b>Delhi folder</b>.",
+     board:()=>({tables:[T(["Branch","Quarter","Revenue","Orders"],[["Delhi","Q1",52000,410],["","Q2",61000,480],["Mumbai","Q1",70000,530],["","Q2",66000,505],["Pune","Q1",30000,260],["","Q2",41000,330]],{hlRows:[0,1],dimRows:[2,3,4,5]})]})},
+    {code:`sales.xs("Q1", level="Quarter")`, say:"<b>xs</b> = cross-section: take <b>Q1</b> from <b>every</b> branch.",
+     board:()=>({tables:[T(["Branch","Quarter","Revenue","Orders"],[["Delhi","Q1",52000,410],["","Q2",61000,480],["Mumbai","Q1",70000,530],["","Q2",66000,505],["Pune","Q1",30000,260],["","Q2",41000,330]],{hlRows:[0,2,4],dimRows:[1,3,5]})]})},
+    {code:`q1.reindex(["Delhi", "Mumbai", "Pune", "Bengaluru"], fill_value=0)`,
+     say:"<b>reindex</b> forces a list of labels. Bengaluru has no data yet → it is added with <b>0</b>. Reports should show it, not hide it!",
+     board:()=>({tables:[ser([52000,70000,30000,0],["Delhi","Mumbai","Pune","Bengaluru"],"Revenue",{newRows:[3]})]})},
+  ],
+  quiz:{q:"With a sorted date index, what does df.loc[\"2024-02\"] return?",opts:["Only 2nd Feb","All rows from February 2024","Row number 2024","An error"],a:1,why:"Partial date strings select the whole period — the entire month."},
+  remember:["<code>set_index</code> / <code>reset_index</code>","<code>at[label, col]</code>, <code>iat[i, j]</code> — one cell","Date index → <code>loc[\"2024-02\"]</code>","MultiIndex → <code>loc[\"Delhi\"]</code>, <code>xs(\"Q1\", level=...)</code>","<code>reindex(labels, fill_value=0)</code>"],
+  discuss:["Should <code>CustomerID</code> or <code>Name</code> be the index of the customers table? What if two customers are both called 'Aarav'?","Why do stock prices and website visits almost always use a date index?"]
+},
+/* ===== 7 ===== */
+{
+  part:"B", title:"Understanding the Business Problem", icon:"💼",
+  sub:"Turn a business worry into clear data questions.",
+  story:"ChaiCart's owner, Mrs. Kapoor, has 6 months of data (Jan–Jun 2024). She must decide <b>where to spend her marketing money</b>, <b>what to keep on the menu</b> and <b>whether discounts are worth it</b>. She hires <b>you</b> as her analyst 🧑‍💻.",
+  steps:[
+    {code:`# Step 1: turn worries into questions`,
+     say:"An analyst never starts with code. First, turn each <b>vague worry</b> into a <b>clear question</b> and pick the pandas tool that can answer it.",
+     board:()=>({tables:[T(["Owner says…","Data question","Tool"],[
+       ["Which city is best?","Q1 Revenue & profit per city/category","groupby, pivot_table"],
+       ["What should I stop selling?","Q2 Best / worst products","groupby, merge"],
+       ["Are we growing?","Q3 Revenue per month","dates, groupby"],
+       ["Do discounts help?","Q4 Qty with vs without discount","new columns"],
+       ["Deliveries are slow!","Q5 Delivery time & rating per city","groupby, cut"],
+       ["Who are my best customers?","Q6 Top customers, segments","merge, nlargest"],
+       ["Should I stop taking cash?","Q7 Payment mix per city","crosstab"]],{newRows:range(7),idx:["","","","","","",""]})]})},
+    {code:`orders    = pd.read_csv("data/orders.csv", parse_dates=["OrderDate"], na_values=["?"])
+customers = pd.read_csv("data/customers.csv", parse_dates=["JoinDate"])
+products  = pd.read_csv("data/products.csv")`,
+     say:"Step 2: <b>know your data</b>. Three files, linked by <b>keys</b>: orders → customers by <b>CustomerID</b>, orders → products by <b>Product</b>.",
+     board:()=>({html:`<div class="dict"><div class="box"><div class="k">📄 orders</div><div class="v"><span>OrderID</span><span>OrderDate</span><span><b>CustomerID</b></span><span>City</span><span><b>Product</b></span><span>Qty</span><span>UnitPrice</span><span>Discount</span><span>Payment</span><span>DeliveryMins</span><span>Rating</span></div></div><div class="box" style="animation-delay:.25s"><div class="k">📄 customers</div><div class="v"><span><b>CustomerID</b></span><span>Name</span><span>Gender</span><span>City</span><span>Segment</span><span>JoinDate</span></div></div><div class="box" style="animation-delay:.5s"><div class="k">📄 products</div><div class="v"><span><b>Product</b></span><span>Category</span><span>UnitPrice</span><span>CostPrice</span></div></div></div>`})},
+    {code:`# Ask → Load → Look → Clean → Create → Analyse → Tell`,
+     say:"Step 3: the analyst's <b>workflow</b>. In real jobs, <b>Look + Clean</b> often takes 60–80 % of the time!",
+     board:()=>({html:chips(["❓ Ask","📥 Load","👀 Look","🧹 Clean","➕ Create","📊 Analyse","📢 Tell"])})},
+    {code:`orders.shape
+orders["OrderDate"].min(), orders["OrderDate"].max()`, say:"First look: how big, and what period?",
+     board:()=>({out:`(61, 11)\n2024-01-02 → 2024-06-27`})},
+    {code:`orders.describe()`, say:"<b>describe()</b> is a Part 1 tool — here we use it like a detective: look at <b>min and max</b> for strange values. Average Qty is about 7 but the <b>max is 250</b>?! And one delivery took <b>480 minutes</b> (8 hours!).",
+     board:()=>({tables:[Object.assign(T(["Qty","DeliveryMins","Rating"],[[7.3,38.4,4.2],[3,30,4],[250,480,5]],{cells:{"2,0":"nan","2,1":"nan"}}),{idx:["mean","50%","max"]})]})},
+    {code:`orders.isna().sum()
+orders.duplicated().sum()`, say:"<b>isna().sum()</b> is from Part 1. <b>New:</b> <b>duplicated().sum()</b> counts rows that are exact copies of an earlier row.",
+     board:()=>({tables:[ser([1,2,5],["Payment","DeliveryMins","Rating"],"missing",{cells:{"0,0":"nan","1,0":"nan","2,0":"nan"}})],out:`Duplicate rows: 1`})},
+    {code:`# 📝 our cleaning to-do list`, say:"Write down everything you found. This becomes the <b>to-do list</b> for Topic 9.",
+     board:()=>({html:flags(["🚩 Qty = 250 (outlier)","🚩 DeliveryMins = 480 (outlier)","🚩 Missing Payment, DeliveryMins, Rating","🚩 1 duplicate row","🚩 Messy city names: ' mumbai', 'MUMBAI '"])})},
+  ],
+  quiz:{q:"In a real data job, which part usually takes the MOST time?",opts:["Making charts","Looking at and cleaning the data","Writing the final email","Installing pandas"],a:1,why:"Most of the effort goes into understanding and cleaning the data before any analysis."},
+  remember:["Start with <b>questions</b>, not code","Know the <b>keys</b> that link tables","First look: <code>shape</code>, <code>info()</code>, <code>describe()</code>, <code>isna().sum()</code>, <code>duplicated().sum()</code>","Write a cleaning to-do list"],
+  discuss:["What <b>other</b> data would help Mrs. Kapoor? (time of day? weather? marketing spend?)","Is 6 months enough to say 'the business is growing'? How could festivals or exams change sales?","Who will read your answer — and should it be a table, a chart, or one sentence?"]
+},
+/* ===== 8 ===== */
+{
+  part:"B", title:"Selecting Columns", icon:"🎯",
+  sub:"By name, by range, by type, by pattern.",
+  story:"Real tables can have <b>200+ columns</b>. You know <b>df[\"col\"]</b>, <b>df[[...]]</b> and <b>drop</b> from Part 1. Now: pick columns by <b>range</b>, <b>position</b>, <b>type</b> and <b>name pattern</b> — without typing every name.",
+  steps:[
+    {code:`orders.loc[:, "City":"Qty"]`, say:"A <b>range</b> of columns with loc: from City to Qty (both included). <b>:</b> means \"all rows\".",
+     board:()=>({tables:[TS(["OrderID","City","Product","Qty","UnitPrice"],{hlCols:["City","Product","Qty"]})]})},
+    {code:`orders.iloc[:, 0:3]`, say:"Columns by <b>position</b>: the first 3 columns (position 3 is <b>not</b> included).",
+     board:()=>({tables:[TS(["OrderID","OrderDate","City","Product","Qty"],{hlCols:["OrderID","OrderDate","City"]})]})},
+    {code:`orders.select_dtypes("number")`, say:"Pick columns by <b>type</b> — only numbers. Perfect before doing maths. (<b>exclude=\"number\"</b> gives text and dates.)",
+     board:()=>({tables:[TS(["OrderID","City","Product","Qty","UnitPrice","Payment"],{hlCols:["OrderID","Qty","UnitPrice"],goneCols:["City","Product","Payment"],cap:"some columns hidden"})]})},
+    {code:`orders.filter(like="Price").columns
+orders.filter(regex="^(Order|Customer)").columns`, say:"Pick by <b>name pattern</b>: names that contain 'Price', or names that <b>start with</b> Order or Customer.",
+     board:()=>({out:`['UnitPrice']\n['OrderID', 'OrderDate', 'CustomerID']`})},
+  ],
+  quiz:{q:"You want only the number columns, before doing maths. Use…",opts:["df.filter('number')","df.select_dtypes('number')","df[['number']]","df.loc[:, 'number']"],a:1,why:"select_dtypes picks columns by their data type."},
+  remember:["<code>df.loc[:, \"a\":\"d\"]</code> — range (end included)","<code>df.iloc[:, 0:3]</code> — by position","<code>select_dtypes(\"number\")</code> / <code>exclude=</code>","<code>filter(like=...)</code> / <code>filter(regex=...)</code>"],
+  discuss:["<code>orders.Qty</code> also works. Why is <code>orders[\"Qty\"]</code> safer? (think of a column called <code>count</code> or 'Order Date')","You have 200 columns. Which selection method saves you the most typing?"]
+},
+/* ===== 9 ===== */
+{
+  part:"B", title:"Missing Values, Outliers & NaN", icon:"🧹",
+  sub:"Find each problem, decide, fix — and explain why.",
+  story:"Cleaning is about <b>decisions</b>, not just code. For every problem ask: <b>Why is it wrong? → What does it change for the business? → What is the safest fix?</b> Here are 7 messy orders from ChaiCart.",
+  steps:[
+    {code:`np.nan == np.nan              # False!
+pd.Series([10, np.nan, 20]).mean()    # 15.0
+pd.Series([10, np.nan, 20]).count()   # 2`,
+     say:"NaN facts: NaN is <b>not equal to anything</b>, not even itself! So never test <b>x == np.nan</b> — use <b>isna()</b>. Also, mean() and count() <b>skip</b> NaN.",
+     board:()=>({out:`False\n15.0\n2`,tip:"Always use <b>.isna()</b> / <b>.notna()</b> to find missing values."})},
+    {code:`orders.isna().mean() * 100          # % missing per column
+orders[orders.isna().any(axis=1)]     # rows with at least one NaN`, say:"New ways to find gaps: the <b>% missing</b> per column, and <b>any(axis=1)</b> to list every row with a problem. Every <b style='color:var(--red)'>red</b> cell here is one: missing values, a messy city name, a giant Qty, and a duplicate.",
+     board:()=>({tables:[T(MS_COLS,MS,{cells:{"1,1":"nan","3,3":"nan"}})]})},
+    {code:`city_median = orders.groupby("City")["DeliveryMins"].transform("median")
+orders["DeliveryMins"] = orders["DeliveryMins"].fillna(city_median)`,
+     say:"Part 1 filled with <b>one</b> number for everyone. But delivery time depends on the <b>city</b>, so fill with the <b>median of the same city</b>. Pune's median is <b>20</b> minutes. (City names and 'Unknown' payment were already fixed with Part 1 tools.)",
+     board:()=>({tables:[T(MS_COLS,swap(swap(swap(MS,5,4,"Unknown"),1,1,"Mumbai"),2,5,20.0),{cells:{"2,5":"fixed","3,3":"nan"}})]})},
+    {code:`orders["Rated"] = orders["Rating"].notna()`,
+     say:"<b>Rating</b>: we <b>keep NaN</b> — inventing ratings would be lying to the owner! Instead we add a flag column <b>Rated</b>.",
+     board:()=>({tables:[T(["OrderID","Rating","Rated"],[[1005,"NaN",false],[1007,5,true],[1010,5,true],[1013,5,true]],{newCols:["Rated"]})]})},
+    {code:`orders[orders.duplicated(keep=False)]
+orders = orders.drop_duplicates()`,
+     say:"<b>duplicated(keep=False)</b> shows <b>all copies</b>. Then <b>drop_duplicates()</b> removes the extra one. Order 1016 was counted twice!",
+     board:()=>({tables:[T(["OrderID","City","Product","Qty"],MS.map(r=>[r[0],r[1].trim().replace(/^\w/,c=>c.toUpperCase()).replace("MUMBAI","Mumbai"),r[2],r[3]]),{hlRows:[4],goneRows:[6]})]})},
+    {code:`q1, q3 = s.quantile(0.25), s.quantile(0.75)
+iqr = q3 - q1
+low, high = q1 - 1.5 * iqr, q3 + 1.5 * iqr`,
+     say:"<b>Outliers</b> with the <b>IQR rule</b> (the same rule box plots use). Anything below <b>low</b> or above <b>high</b> is an outlier.",
+     board:()=>({html:`<div class="numline"><span class="nl-box" style="left:2%;width:6%"></span>${[1,2,2,3,3,3,4,4,5,5].map((v,i)=>`<span class="nl-dot" style="left:${1+v*1.2}%;animation-delay:${i*.05}s"></span>`).join("")}<span class="nl-dot out" style="left:95%"></span><span class="nl-lbl" style="left:0">1</span><span class="nl-lbl" style="left:9%">high ≈ 7.6</span><span class="nl-lbl" style="left:92%">250 🚩</span></div>`,
+       out:`Qty:          limits -1.4 – 7.6   → outliers: [250]\nDeliveryMins: limits -10.4 – 72.6 → outliers: [480.0]`})},
+    {code:`orders.loc[orders["Qty"] > high, "Qty"] = orders["Qty"].median()
+orders["DeliveryMins"] = orders["DeliveryMins"].clip(upper=73)`,
+     say:"Decide per outlier. <b>Qty 250</b> was a typo (we asked the shop) → replace with the <b>median (3)</b>. <b>480 minutes</b> really happened → <b>clip</b> it to 73 so it doesn't distort the average, and <b>report it</b>.",
+     board:()=>({tables:[T(["OrderID","Product","Qty"],[[1013,"Filter Coffee",3]],{cells:{"0,2":"fixed"},cap:"Qty: typo → median"}),T(["OrderID","DeliveryMins"],[[1039,73]],{cells:{"0,1":"fixed"},cap:"Delivery: capped (was 480)"})]})},
+  ],
+  quiz:{q:"What does df[df['Rating'] == np.nan] return?",opts:["All rows with a missing rating","No rows at all — NaN is never equal to anything","An error","All rows"],a:1,why:"np.nan == np.nan is False, so the mask is all False. Use df[df['Rating'].isna()]."},
+  remember:["Use <code>isna()</code>, never <code>== np.nan</code>","<code>pd.to_numeric(errors=\"coerce\")</code> — junk → NaN","Group fill: <code>groupby(...).transform(\"median\")</code>","<code>dropna(subset=[...])</code>, <code>ffill()</code>, <code>interpolate()</code>","Flag column: <code>df[\"Rated\"] = df[\"Rating\"].notna()</code>","<code>duplicated(keep=False)</code>, <code>drop_duplicates()</code>","Outliers: IQR / z-score → remove, replace, <code>clip</code> or keep"],
+  discuss:["If the 250-cup order was a <b>real office order</b>, removing it would hide good news. How would you find out the truth?","Mean or median delivery time: which would the owner put in an advert? Which is more honest?","<code>dropna()</code> would delete 8 orders just because one field was empty. Is that OK for total revenue?"]
+},
+/* ===== 10 ===== */
+{
+  part:"B", title:"Creating New Columns", icon:"➕",
+  sub:"Build the columns that answer the business questions.",
+  story:"Nobody stored <b>Late or On time</b>, <b>Weekend</b> or <b>Order size</b> — we <b>create</b> them (called <b>feature engineering</b>). Part 1 covered maths columns, <b>apply</b> on one column and <b>map</b>. Here are the <b>new</b> tools. (A <b>Revenue</b> column was already made with Part 1 maths.)",
+  steps:[
+    {code:`orders["Month"] = orders["OrderDate"].dt.to_period("M").astype(str)
+orders["Weekday"] = orders["OrderDate"].dt.day_name()
+orders["IsWeekend"] = orders["OrderDate"].dt.dayofweek >= 5`,
+     say:"New <b>.dt</b> tools: <b>to_period(\"M\")</b> gives a year-month label, <b>day_name()</b> the weekday, and <b>dayofweek</b> a number (Monday = 0 … Saturday = 5, Sunday = 6) → a <b>weekend</b> flag.",
+     board:()=>({tables:[T(["OrderDate","Month","Weekday","IsWeekend"],OS.map(r=>[r[1],r[1].slice(0,7),WD(r[1]),["Saturday","Sunday"].includes(WD(r[1]))]),{newCols:["Month","Weekday","IsWeekend"]})]})},
+    {code:`orders["Delivery"] = np.where(orders["DeliveryMins"] > 35, "Late", "On time")`,
+     say:"<b>np.where</b> = if/else for a whole column: more than 35 minutes → 'Late', otherwise 'On time'.",
+     board:()=>({tables:[T(["OrderID","DeliveryMins","Delivery"],OS.map(r=>[r[0],r[8],r[8]>35?"Late":"On time"]),{newCols:["Delivery"],cells:Object.fromEntries(OS.map((r,i)=>[`${i},2`,r[8]>35?"nan":"fixed"]))})]})},
+    {code:`conditions = [orders["Revenue"] >= 400, orders["Revenue"] >= 150]
+choices = ["Large", "Medium"]
+orders["OrderSize"] = np.select(conditions, choices, default="Small")`,
+     say:"<b>np.select</b> = many conditions, checked <b>in order</b>; the first match wins. Nothing matches → <b>default</b>.",
+     board:()=>({tables:[T(["OrderID","Revenue","OrderSize"],OS.map(r=>[r[0],r1(R(r)),R(r)>=400?"Large":R(r)>=150?"Medium":"Small"]),{newCols:["OrderSize"]})]})},
+    {code:`orders["SpeedBand"] = pd.cut(orders["DeliveryMins"],
+                             bins=[0, 25, 35, 100],
+                             labels=["Fast", "Normal", "Slow"])`,
+     say:"<b>pd.cut</b> puts numbers into <b>bins</b> you choose: 0–25 Fast, 25–35 Normal, 35–100 Slow. (<b>pd.qcut</b> makes equal-sized groups instead.)",
+     board:()=>({tables:[T(["OrderID","DeliveryMins","SpeedBand"],OS.map(r=>[r[0],r[8],r[8]<=25?"Fast":r[8]<=35?"Normal":"Slow"]),{newCols:["SpeedBand"]})]})},
+    {code:`orders["Promo"] = orders.apply(
+    lambda row: "Bulk deal" if row["Qty"] >= 4 and row["Discount"] >= 10 else "-",
+    axis=1)`,
+     say:"In Part 1, apply worked on <b>one column</b>. With <b>axis=1</b> the lambda gets a <b>whole row</b>, so the rule can use <b>several columns</b>. Only order 1008 has 4+ items AND 10 %+ discount.",
+     board:()=>({tables:[T(["OrderID","Qty","Discount","Promo"],OS.map(r=>[r[0],r[4],r[6],r[4]>=4&&r[6]>=10?"Bulk deal":"-"]),{newCols:["Promo"]})],tip:"apply(axis=1) is a slow loop on big data. The same rule with <b>np.where((a) & (b), ...)</b> is much faster."})},
+    {code:`orders.assign(
+    RevenuePerItem=lambda d: d["Revenue"] / d["Qty"],
+    DiscountRs=lambda d: d["Qty"] * d["UnitPrice"] - d["Revenue"])`,
+     say:"<b>assign</b> adds several columns in <b>one readable chain</b> and returns a <b>new</b> table — the original stays unchanged.",
+     board:()=>({tables:[T(["OrderID","Qty","Revenue","RevenuePerItem","DiscountRs"],OS.map(r=>[r[0],r[4],r1(R(r)),r1(R(r)/r[4]),r1(r[4]*r[5]-R(r))]),{newCols:["RevenuePerItem","DiscountRs"]})]})},
+    {code:`orders["CityAvgDelivery"] = orders.groupby("City")["DeliveryMins"].transform("mean")`,
+     say:"<b>transform</b> puts a <b>group answer on every row</b> — here each order gets its city's average delivery time (from these 8 samples).",
+     board:()=>{const avg={};OS.forEach(r=>{(avg[r[2]]=avg[r[2]]||[]).push(r[8])});const m=c=>r1(avg[c].reduce((a,b)=>a+b)/avg[c].length);
+       return {tables:[T(["City","DeliveryMins","CityAvgDelivery"],OS.map(r=>[r[2],r[8],m(r[2])]),{newCols:["CityAvgDelivery"],rowCls:cityCls(OS)})],legend:true}}},
+  ],
+  quiz:{q:"You need 3+ categories (Small / Medium / Large) from conditions. Best tool?",opts:["np.where","np.select","df.drop","pd.merge"],a:1,why:"np.where is for 2 choices; np.select handles many conditions with a default."},
+  remember:["<code>.dt.to_period(\"M\")</code>, <code>.dt.day_name()</code>, <code>.dt.dayofweek</code>","<code>np.where(cond, yes, no)</code>","<code>np.select(conds, choices, default=)</code>","<code>pd.cut</code> (your bins), <code>pd.qcut</code> (equal groups)","<code>apply(lambda row: ..., axis=1)</code> — several columns","<code>assign(...)</code>, <code>groupby().transform(...)</code>"],
+  discuss:["We set 'Late' at 35 minutes. Who should decide that number — the analyst, the owner, or the customer?","How would the results change if 'Late' meant 30 minutes?"]
+},
+/* ===== 11 ===== */
+{
+  part:"B", title:"Aggregate Data — groupby, merge, pivot, lambda", icon:"📊",
+  sub:"Split → Apply → Combine, and join tables together.",
+  story:"Part 1 taught basic <b>merge</b> and one-column <b>groupby</b> with <b>agg</b>. New here: merge <b>safety checks</b>, <b>right/outer</b> joins, finding <b>what's missing</b>, two-key groupby, <b>lambda</b> in agg, and <b>pivot_table</b>. (Results use all 60 cleaned orders.)",
+  steps:[
+    {code:`full = orders.merge(products[["Product", "Category", "CostPrice"]],
+                    on="Product", how="left", validate="many_to_one")
+full["Profit"] = full["Revenue"] - full["Qty"] * full["CostPrice"]`,
+     say:"The merge you know, plus <b>validate=\"many_to_one\"</b> — a safety check: many orders → one product row. Then we can compute <b>Profit</b>!",
+     board:()=>({tables:[T(["Product","Qty","Revenue"],[["Veg Sandwich",3,270],["Mango Lassi",1,59.5],["Paneer Wrap",3,382.5],["Brownie",1,80]],{cap:"orders",hlCols:["Product"]}),
+       T(["Product","Category","CostPrice"],[["Veg Sandwich","Snacks",45],["Mango Lassi","Drinks",30],["Paneer Wrap","Snacks",80],["Brownie","Bakery",35]],{cap:"products",hlCols:["Product"]}),
+       T(["Product","Category","Profit"],[["Veg Sandwich","Snacks",135],["Mango Lassi","Drinks",29.5],["Paneer Wrap","Snacks",142.5],["Brownie","Bakery",45]],{newCols:["Category","Profit"],cap:"full"})]})},
+    {code:`# how="inner" | "left" | "right" | "outer"`,
+     say:"The <b>4 join types</b>. Draw them on the board! <b>left</b> is the most common: \"keep all my orders, add info if found\".",
+     board:()=>({html:`<div class="joins">${[["inner","only keys in BOTH","orders with a known product"],["left","ALL left rows + matches","all orders, product info if any"],["right","ALL right rows + matches","all products, orders if any"],["outer","EVERYTHING","full picture, gaps = NaN"]].map((j,i)=>`<div class="box" style="animation-delay:${i*.15}s"><div class="k">how="${j[0]}"</div><div>${j[1]}</div><div style="color:var(--muted);font-size:13px">e.g. ${j[2]}</div></div>`).join("")}</div>`})},
+    {code:`c = customers.merge(orders[["CustomerID"]].drop_duplicates(),
+                    on="CustomerID", how="left", indicator=True)
+c[c["_merge"] == "left_only"]`,
+     say:"<b>indicator=True</b> adds a <b>_merge</b> column showing where each row came from. <b>left_only</b> = customers who <b>never ordered</b> → send them a welcome coupon! 🎟️",
+     board:()=>({tables:[T(["CustomerID","Name","_merge"],[["C011","Kiran","both"],["C012","Neha","both"],["C013","Tara","left_only"],["C014","Yash","left_only"]],{newCols:["_merge"],hlRows:[2,3]})]})},
+    {code:`full.groupby(["City", "Category"])["Revenue"].sum()`,
+     say:"Part 1 grouped by <b>one</b> column. Group by <b>two</b> → the answer has a <b>MultiIndex</b> (Topic 6): City → Category.",
+     board:()=>({tables:[T(["City","Category","Revenue"],[["Bengaluru","Bakery",935],["","Coffee",1168],["","Drinks",270],["","Snacks",736],["","Tea",142],["Delhi","Bakery",340],["","Coffee",525]],{cells:Object.fromEntries(range(7).flatMap(r=>[[`${r},0`,"hl-idx"],[`${r},1`,"hl-idx"]])),cap:"first 7 rows"})]})},
+    {code:`full.groupby(["City", "Category"], as_index=False)["Profit"].sum()`,
+     say:"<b>as_index=False</b> keeps City and Category as <b>normal columns</b> — a flat table, great for exporting to Excel.",
+     board:()=>({tables:[T(["City","Category","Profit"],[["Bengaluru","Bakery",435],["Bengaluru","Coffee",573],["Bengaluru","Drinks",149.5],["Bengaluru","Snacks",341],["Bengaluru","Tea",82]],{newRows:range(5)})]})},
+    {code:`full.groupby("City")["Rating"].size()     # all rows
+full.groupby("City")["Rating"].count()    # rows that HAVE a rating`,
+     say:"⚠️ <b>size</b> counts <b>all</b> rows; <b>count</b> skips NaN. Delhi has 9 orders but only 6 ratings!",
+     board:()=>({tables:[Object.assign(T(["size","count"],[[15,15],[9,6],[21,20],[15,14]],{cells:{"1,1":"hl","2,1":"hl","3,1":"hl"}}),{idx:["Bengaluru","Delhi","Mumbai","Pune"]})]})},
+    {code:`full.groupby("Category").agg(
+    revenue=("Revenue", "sum"),
+    price_range=("UnitPrice", lambda s: s.max() - s.min()),
+    discounted_pct=("Discount", lambda d: (d > 0).mean() * 100))`,
+     say:"No ready-made function? Pass a <b>lambda</b>. It receives <b>one column of one group</b> and returns one number.",
+     board:()=>({tables:[Object.assign(T(["revenue","price_range","discounted_pct"],[[2655,20,30.0],[3629.5,70,57.1],[749,0,40.0],[7130.5,125,55.0],[1535,20,63.6]],{newCols:["price_range","discounted_pct"]}),{idx:["Bakery","Coffee","Drinks","Snacks","Tea"]})]})},
+    {code:`cat = full.groupby("Category")[["Revenue", "Profit"]].sum()
+cat["Margin%"] = cat["Profit"] / cat["Revenue"] * 100`,
+     say:"⚠️ <b>Margin %</b> needs <b>two</b> columns, but a lambda in agg sees only one. So: <b>aggregate the totals first, then divide</b>.",
+     board:()=>({tables:[Object.assign(T(["Revenue","Profit","Margin%"],[[749,419,55.9],[1535,855,55.7],[3629.5,1884.5,51.9],[2655,1320,49.7],[7130.5,3165.5,44.4]],{newCols:["Margin%"]}),{idx:["Drinks","Tea","Coffee","Bakery","Snacks"]})],tip:"Snacks bring the most revenue but have the <b>lowest</b> margin!"})},
+    {code:`pd.pivot_table(full, index="City", columns="Category", values="Revenue",
+               aggfunc="sum", fill_value=0, margins=True, margins_name="Total")`,
+     say:"<b>pivot_table</b> = groupby laid out like an <b>Excel pivot</b>: rows = City, columns = Category, cells = total revenue, plus <b>Total</b> row and column.",
+     board:()=>({tables:[Object.assign(T(["Bakery","Coffee","Drinks","Snacks","Tea","Total"],[[935,1168,270,736,142,3250],[340,525,270,638,204,1976],[1140,706,0,4142,248,6236],[240,1230,210,1615,941,4236],[2655,3630,749,7130,1535,15699]],{hlCols:["Total"],hlRows:[4]}),{idx:["Bengaluru","Delhi","Mumbai","Pune","Total"]})]})},
+  ],
+  quiz:{q:"Which merge finds customers who NEVER ordered?",opts:["how='inner'","how='left' + indicator=True, keep 'left_only'","pd.concat","how='right'"],a:1,why:"A left join keeps every customer; _merge == 'left_only' marks the ones with no matching order (an 'anti-join')."},
+  remember:["<code>merge(..., validate=, indicator=, suffixes=)</code>","<code>how=\"right\"</code> / <code>\"outer\"</code>","Anti-join: <code>_merge == \"left_only\"</code>","<code>groupby([\"a\", \"b\"], as_index=False)</code>","<code>size</code> (all rows) vs <code>count</code> (skips NaN)","<code>lambda</code> inside agg for custom maths","Ratios: aggregate first, then divide","<code>pivot_table(index, columns, values, aggfunc, margins=True)</code>"],
+  discuss:["Mumbai has the highest <b>revenue</b>. Should marketing money go where revenue is highest, or where <b>profit</b> or <b>growth</b> is highest?","What could go wrong if <code>products.csv</code> listed 'Samosa' twice and we forgot <code>validate=</code>?"]
+},
+/* ===== 12 ===== */
+{
+  part:"B", title:"Pivoting and Reshaping", icon:"🔄",
+  sub:"Long ↔ wide: pivot, melt, stack, unstack, crosstab, explode.",
+  story:"The <b>same data</b> can have two shapes. <b>Long</b> = one row per fact (computers and charts love it). <b>Wide</b> = one column per category (humans and reports love it). Reshaping = switching between them.",
+  steps:[
+    {code:`monthly_long = full.groupby(["City", "Month"], as_index=False)["Revenue"].sum()`,
+     say:"This is <b>long</b> data: City, Month, Revenue — one row for each city-month.",
+     board:()=>({tables:[T(["City","Month","Revenue"],LONG,{rowCls:cityCls(LONG),cap:"long (first 6 rows)"})]})},
+    {code:`monthly_long.pivot(index="City", columns="Month", values="Revenue")`,
+     say:"<b>pivot</b>: long → wide. City goes down the side, Month goes across the top. It only <b>re-arranges</b> — no maths.",
+     board:()=>({tables:[T(["City","Month","Revenue"],LONG,{rowCls:cityCls(LONG)}),Object.assign(T(["2024-01","2024-02"],[[325,380],[60,850],[832,202]],{newCols:["2024-01","2024-02"],rowCls:{0:"g4",1:"g1",2:"g2"},cap:"wide"}),{idx:["Bengaluru","Delhi","Mumbai"]})]})},
+    {code:`full.pivot(index="City", columns="Month", values="Revenue")`,
+     say:"⚠️ On the <b>raw orders</b>, Delhi has <b>2 orders</b> in February. pivot doesn't know how to combine them → <b>error</b>!",
+     board:()=>({tables:[T(["City","Month","Revenue"],[["Delhi","2024-02",212.5],["Delhi","2024-02",637.5]],{hlRows:[0,1]})],out:`ValueError: Index contains duplicate entries, cannot reshape`})},
+    {code:`full.pivot_table(index="City", columns="Month", values="Revenue", aggfunc="sum")`,
+     say:"<b>pivot_table</b> fixes it: it <b>adds up</b> the duplicates (aggfunc). Rule: <b>pivot</b> = re-arrange only, <b>pivot_table</b> = aggregate + re-arrange.",
+     board:()=>({tables:[Object.assign(T(["2024-01","2024-02","2024-03"],[[325,380,1228],[60,850,466],[832,202,930],[888,1312,25]],{newRows:[0,1,2,3]}),{idx:["Bengaluru","Delhi","Mumbai","Pune"]})]})},
+    {code:`exam_long = exam.melt(id_vars=["Student", "Class"],
+                      var_name="Subject", value_name="Marks")`,
+     say:"<b>melt</b>: wide → long. Exam marks arrive with one column per subject. melt <b>melts</b> the subject columns into rows.",
+     board:()=>({tables:[T(["Student","Class","Maths","Science","English"],EXAM,{cap:"wide"}),T(["Student","Class","Subject","Marks"],EXLONG,{newCols:["Subject","Marks"],cap:"long"})]})},
+    {code:`exam_long.pivot_table(index="Class", columns="Subject", values="Marks", aggfunc="mean")`,
+     say:"Long data is easy to analyse: <b>average per class per subject</b> in one line.",
+     board:()=>({tables:[Object.assign(T(["English","Maths","Science"],[[84.5,85.0,83.5],[82.0,76.5,80.5]],{newRows:[0,1]}),{idx:["9A","9B"]})]})},
+    {code:`cat_city = full.groupby(["City", "Category"])["Qty"].sum()
+cat_city.unstack(fill_value=0)`,
+     say:"<b>unstack</b> lifts the inner index level (Category) <b>up into the columns</b>. <b>stack</b> pushes it back down.",
+     board:()=>({tables:[T(["City","Category","Qty"],[["Bengaluru","Bakery",10],["","Coffee",14],["","Drinks",4],["","Snacks",8],["","Tea",4]],{cells:Object.fromEntries(range(5).flatMap(r=>[[`${r},0`,"hl-idx"],[`${r},1`,"hl-idx"]]))}),
+       Object.assign(T(["Bakery","Coffee","Drinks","Snacks","Tea"],[[10,14,4,8,4],[5,12,4,5,4],[12,8,0,43,6],[3,13,3,15,20]],{newCols:["Bakery","Coffee","Drinks","Snacks","Tea"]}),{idx:["Bengaluru","Delhi","Mumbai","Pune"]})]})},
+    {code:`wide.stack()`,
+     say:"<b>stack</b> does the opposite: it pushes the columns (Category) <b>back down</b> into the rows. Wide → long again, with a 2-level index.",
+     board:()=>({tables:[Object.assign(T(["Bakery","Coffee","Drinks","Snacks","Tea"],[[10,14,4,8,4],[5,12,4,5,4]],{hlRows:[0],cap:"wide (first 2 cities)"}),{idx:["Bengaluru","Delhi"]}),
+       T(["City","Category","Qty"],[["Bengaluru","Bakery",10],["","Coffee",14],["","Drinks",4],["","Snacks",8],["","Tea",4],["Delhi","Bakery",5]],{newRows:range(6),cells:Object.fromEntries(range(6).flatMap(r=>[[`${r},0`,"hl-idx"],[`${r},1`,"hl-idx"]])),cap:"long"})]})},
+    {code:`pd.crosstab(full["City"], full["Payment"], normalize="index") * 100`,
+     say:"<b>crosstab</b> = a quick <b>count table</b> of two categories. <b>normalize=\"index\"</b> turns each row into <b>percentages</b> (each city adds up to 100 %).",
+     board:()=>({tables:[Object.assign(T(["Card","Cash","UPI","Unknown"],[[40,33,27,0],[0,22,67,11],[43,19,38,0],[20,20,60,0]],{newRows:[0,1,2,3]}),{idx:["Bengaluru","Delhi","Mumbai","Pune"]})],tip:"Bengaluru still pays <b>33 % in cash</b> — stopping cash there could lose customers."})},
+    {code:`baskets.assign(Item=baskets["Items"].str.split(", ")).explode("Item")`,
+     say:"Food apps store a basket as one text like 'Masala Chai, Samosa'. <b>split</b> makes a list, <b>explode</b> gives <b>one row per item</b>.",
+     board:()=>({tables:[T(["BasketID","Items"],[[1,"Masala Chai, Samosa"],[2,"Cold Coffee"],[3,"Samosa, Brownie, Masala Chai"]]),
+       Object.assign(T(["BasketID","Item"],[[1,"Masala Chai"],[1,"Samosa"],[2,"Cold Coffee"],[3,"Samosa"],[3,"Brownie"],[3,"Masala Chai"]],{newRows:range(6)}),{idx:[0,0,1,2,2,2]})]})},
+    {code:`pd.get_dummies(full["Payment"], dtype=int)`,
+     say:"<b>get_dummies</b> turns one category column into <b>0/1 columns</b> — needed for machine learning.",
+     board:()=>({tables:[T(["Payment","Card","Cash","UPI"],[["UPI",0,0,1],["Card",1,0,0],["Cash",0,1,0],["UPI",0,0,1]],{newCols:["Card","Cash","UPI"]})]})},
+    {code:`delhi.reindex(all_months, fill_value=0)`,
+     say:"Delhi had <b>no orders in May</b>, so May was simply missing. <b>reindex</b> with all months shows it as <b>0</b> — honest reports show the gap!",
+     board:()=>({tables:[ser([60,850,466,210,0,390],["2024-01","2024-02","2024-03","2024-04","2024-05","2024-06"],"Delhi revenue",{newRows:[4]})]})},
+  ],
+  quiz:{q:"Exam data has one column per subject. To turn it into rows (Student, Subject, Marks) use…",opts:["pivot","melt","merge","groupby"],a:1,why:"melt turns wide columns into long rows; pivot does the opposite."},
+  remember:["Long → wide: <code>pivot</code> (no duplicates) / <code>pivot_table</code> (aggregates) / <code>unstack</code>","Wide → long: <code>melt</code> / <code>stack</code>","<code>crosstab(a, b, normalize=\"index\")</code>","<code>str.split</code> + <code>explode</code>","<code>get_dummies</code>","<code>reindex(..., fill_value=0)</code> fills gaps"],
+  discuss:["You send a monthly report to the owner AND feed the same data to a chart tool. Which shape (long or wide) for each, and why?","Why does <code>pivot</code> refuse to work when there are duplicates, instead of just adding them?"]
+},
+/* ===== 13 ===== */
+{
+  part:"B", title:"Identifying Unique Values", icon:"🔢",
+  sub:"What's different, how many, how often, repeated?",
+  story:"Part 1 used <b>unique()</b> and <b>value_counts()</b>. New questions: \"<b>How many</b> different products?\" \"What <b>share</b> pays by UPI?\" \"Which city-product <b>pairs</b> exist?\" \"What was each customer's <b>first</b> order?\"",
+  steps:[
+    {code:`full["Product"].nunique()`, say:"Part 1's <b>unique()</b> <b>lists</b> the different values. <b>nunique()</b> <b>counts</b> them.",
+     board:()=>({out:`10`})},
+    {code:`full.nunique().sort_values()`, say:"<b>nunique</b> on every column at once. 2 values → a flag; as many as the rows → an <b>ID</b> column. A quick X-ray of the table!",
+     board:()=>({tables:[ser([2,3,4,5,10,12,60],["IsWeekend","Segment","City","Category","Product","CustomerID","OrderID"],"unique",{newRows:range(7)})],tip:"OrderID has 60 unique values for 60 rows ✅ — no duplicate orders left."})},
+    {code:`full["Payment"].value_counts(normalize=True) * 100`, say:"<b>value_counts</b> counts how often each value appears. <b>normalize=True</b> gives shares instead of counts.",
+     board:()=>({html:bars([["UPI",45],["Card",30],["Cash",23.3],["Unknown",1.7]]),out:`UPI 45.0 %   Card 30.0 %   Cash 23.3 %   Unknown 1.7 %`})},
+    {code:`full[["City", "Product"]].drop_duplicates()`, say:"<b>drop_duplicates</b> on some columns gives the <b>unique combinations</b>. Repeated pairs fade out (example rows).",
+     board:()=>({tables:[T(["City","Product"],[["Mumbai","Veg Sandwich"],["Delhi","Mango Lassi"],["Mumbai","Paneer Wrap"],["Mumbai","Veg Sandwich"],["Pune","Paneer Wrap"],["Pune","Paneer Wrap"]],{goneRows:[3,5],rowCls:{0:"g2",1:"g1",2:"g2",3:"g2",4:"g3",5:"g3"}})],out:`31 city-product combinations in the full data`})},
+    {code:`full["CustomerID"].value_counts().head()`, say:"How many orders per customer? Sara (C010) and Meera (C006) ordered <b>8 times</b> each.",
+     board:()=>({tables:[ser([8,8,7,6,6],["C010","C006","C007","C011","C012"],"orders",{newRows:range(5)})]})},
+    {code:`full.sort_values("OrderDate").drop_duplicates(subset="CustomerID", keep="first")`,
+     say:"Each customer's <b>first order</b>: sort by date, then keep only the first row per customer.",
+     board:()=>({tables:[T(["CustomerID","Name","OrderDate","Product"],[["C001","Aarav","2024-02-02","Filter Coffee"],["C002","Diya","2024-01-09","Paneer Wrap"],["C003","Rohan","2024-01-28","Green Tea"],["C004","Isha","2024-02-24","Cookies Pack"],["C005","Kabir","2024-01-03","Mango Lassi"]],{newRows:range(5),cap:"first 5 customers"})]})},
+    {code:`full.groupby("Month")["CustomerID"].nunique()`, say:"🏢 In apps this is called <b>monthly active users</b>: the number of <b>different</b> customers each month. May was a weak month.",
+     board:()=>({html:bars([["Jan",7],["Feb",7],["Mar",8],["Apr",7],["May",4],["Jun",8]])})},
+  ],
+  quiz:{q:"How many DIFFERENT cities are in df['City']?",opts:["df['City'].count()","df['City'].nunique()","df['City'].size","len(df)"],a:1,why:"nunique counts distinct values; count and size count rows."},
+  remember:["<code>nunique()</code> — how many different","<code>value_counts(normalize=True)</code> — shares","<code>drop_duplicates(subset=[...], keep=\"first\")</code>","<code>duplicated()</code>","Active users: <code>groupby(month)[id].nunique()</code>"],
+  discuss:["<code>OrderID.nunique()</code> should equal the number of rows. If it doesn't, what does it tell you?","Why is 'number of different customers' a better health signal than 'number of orders'?"]
+},
+/* ===== 14 ===== */
+{
+  part:"B", title:"Filter Data (advanced)", icon:"🧲",
+  sub:"Top-N per group, filter whole groups, date windows.",
+  story:"Basic filters ask about <b>one row</b>. Advanced filters ask about a row <b>compared to its group</b>: \"the top 2 orders <b>in each city</b>\", \"products whose <b>average</b> rating is low\".",
+  steps:[
+    {code:`(full.sort_values("Revenue", ascending=False)
+     .groupby("City")
+     .head(2))`, say:"<b>Top 2 per group</b>: sort big → small, then keep the first 2 rows <b>of each city</b>.",
+     board:()=>{const rows=[["Bengaluru",1044,"Cold Coffee",510],["Bengaluru",1026,"Cold Coffee",408],["Delhi",1018,"Paneer Wrap",637.5],["Delhi",1057,"Brownie",340],["Mumbai",1024,"Paneer Wrap",750],["Mumbai",1055,"Paneer Wrap",750],["Pune",1008,"Paneer Wrap",637.5],["Pune",1042,"Cold Coffee",570]];
+       return {tables:[T(["City","OrderID","Product","Revenue"],rows,{rowCls:cityCls(rows),newRows:range(8)})],legend:true}}},
+    {code:`low = full.groupby("Product").filter(lambda g: g["Rating"].mean() < 4.2)`,
+     say:"<b>groupby().filter</b> keeps or drops <b>whole groups</b>. Here: keep only products whose <b>average rating</b> is below 4.2 → candidates to improve.",
+     board:()=>({tables:[Object.assign(T(["mean rating","count"],[[4.00,6],[4.17,6],[3.75,4],[4.00,3]],{newRows:range(4)}),{idx:["Cold Coffee","Cookies Pack","Mango Lassi","Samosa"]})]})},
+    {code:`full[full["Revenue"] > full.groupby("City")["Revenue"].transform("mean")]`,
+     say:"Rows <b>above their own group's average</b>: transform gives each row its city's average, then we compare.",
+     board:()=>({tables:[ser([10,7,5,2],["Mumbai","Bengaluru","Pune","Delhi"],"orders above city avg",{newRows:range(4),rowCls:{0:"g2",1:"g4",2:"g3",3:"g1"}})]})},
+    {code:`last = full["OrderDate"].max()
+full[full["OrderDate"] >= last - pd.Timedelta(days=30)]`,
+     say:"A <b>date window</b>: the last 30 days of data. pd.Timedelta lets you do maths with dates.",
+     board:()=>({out:`14 orders between 2024-05-28 and 2024-06-27`})},
+    {code:`full.query("Segment == 'Student' and IsWeekend")`, say:"query works with <b>True/False columns</b> too. Students who order on weekends:",
+     board:()=>({tables:[T(["Name","OrderDate","Weekday","Product"],[["Rohan","2024-01-28","Sunday","Green Tea"],["Sara","2024-04-20","Saturday","Cold Coffee"],["Vihaan","2024-06-02","Sunday","Brownie"],["Vihaan","2024-06-02","Sunday","Masala Chai"],["Aarav","2024-06-09","Sunday","Filter Coffee"]],{newRows:range(5)})]})},
+    {code:`df[df["x"] > 5]["y"] = 0          # ❌ does NOT change df
+df.loc[df["x"] > 5, "y"] = 0       # ✅ one step with loc`,
+     say:"⚠️ <b>Common mistake:</b> filtering and then changing values changes a <b>copy</b>, not your table. Use <b>loc[mask, column]</b> in one step.",
+     board:()=>({html:`<div class="dict"><div class="box" style="border-color:var(--red);background:var(--red-soft)"><div class="k" style="color:var(--red)">❌ two steps</div><div>filter → copy → change the copy</div></div><div class="box" style="border-color:var(--green);background:var(--green-soft);animation-delay:.2s"><div class="k" style="color:var(--green)">✅ loc[mask, col]</div><div>change the real table</div></div></div>`})},
+  ],
+  quiz:{q:"Keep only products ordered at least 7 times (keep all their rows). Use…",opts:["df.groupby('Product').filter(lambda g: len(g) >= 7)","df[df['Qty'] >= 7]","df.nlargest(7, 'Qty')","df.head(7)"],a:0,why:"groupby().filter keeps or drops whole groups based on a rule about the group."},
+  remember:["Top N per group: <code>sort_values().groupby(g).head(n)</code>","Whole groups: <code>groupby(g).filter(lambda x: ...)</code>","Vs. group average: <code>transform(\"mean\")</code>","Date window: <code>pd.Timedelta(days=30)</code>","Change values: <code>df.loc[mask, \"col\"] = value</code>"],
+  discuss:["Is a product with an average rating of 3.75 from only 4 ratings really bad? How many ratings would you need?","Why do 'last 30 days' reports change every day even if nothing is wrong?"]
+},
+/* ===== 15 ===== */
+{
+  part:"C", title:"Capstone — Answer the Owner", icon:"🏆",
+  sub:"Every tool together: from questions to recommendations.",
+  story:"Time to answer Mrs. Kapoor's 7 questions. For each one: <b>code → result → one-line insight</b>. Then <b>discuss</b>: would you bet her money on it?",
+  steps:[
+    {code:`full.pivot_table(index="City", columns="Category", values="Profit",
+                 aggfunc="sum", fill_value=0, margins=True)`,
+     say:"<b>Q1. Where is the profit?</b> Mumbai earns the most, mostly from <b>Snacks</b>. Delhi is the smallest.",
+     board:()=>({tables:[Object.assign(T(["Bakery","Coffee","Drinks","Snacks","Tea","Total"],[[585,372,0,1927,148,3032],[135,655,120,660,521,2091],[435,573,150,341,82,1580],[165,285,150,238,104,941],[1320,1884,419,3166,855,7644]],{hlCols:["Total"],cells:{"0,3":"hl"}}),{idx:["Mumbai","Pune","Bengaluru","Delhi","Total"]})]})},
+    {code:`full.groupby("Product")["Profit"].sum().sort_values(ascending=False)`,
+     say:"<b>Q2. Best and worst products.</b> Paneer Wrap brings <b>24 %</b> of all profit. Samosa only <b>1.8 %</b>, and Iced Lemon Tea <b>never sold</b>.",
+     board:()=>({html:bars([["Paneer Wrap",1842.5],["Cold Coffee",1267],["Veg Sandwich",1188],["Cookies Pack",885],["Filter Coffee",617.5],["Green Tea",484],["Brownie",435],["Mango Lassi",419],["Masala Chai",371],["Samosa",135]],"₹")})},
+    {code:`trend = full.groupby("Month")["Revenue"].sum()
+trend.pct_change() * 100`,
+     say:"<b>Q3. Are we growing?</b> Up and down — May dropped <b>62 %</b>, June bounced back to the best month. With only 6 months, be careful!",
+     board:()=>({html:bars([["Jan",2106],["Feb",2745],["Mar",2649],["Apr",3315],["May",1273],["Jun",3612]],"₹")})},
+    {code:`full.groupby("HasDiscount").agg(avg_qty=("Qty", "mean"), avg_profit=("Profit", "mean"))`,
+     say:"<b>Q4. Do discounts help?</b> Discounted orders have <b>more items</b> (3.8 vs 2.6) and even <b>more profit</b> per order. But is that proof? 🤔",
+     board:()=>({tables:[Object.assign(T(["orders","avg_qty","avg_revenue","avg_profit"],[[29,2.59,220.69,115],[31,3.81,299.97,139]],{newRows:[0,1]}),{idx:["No","Yes"]})]})},
+    {code:`full.groupby("City").agg(avg_mins=("DeliveryMins", "mean"),
+                         late_pct=("Delivery", lambda s: (s == "Late").mean() * 100))`,
+     say:"<b>Q5. Delivery.</b> Bengaluru is slowest (<b>47 % late</b>), Pune fastest. Fast deliveries get the best ratings (4.38).",
+     board:()=>({tables:[Object.assign(T(["avg_mins","late_pct","rating"],[[35.6,46.7,4.3],[33.9,44.4,4.3],[31.3,38.1,4.2],[25.6,26.7,4.0]],{hlRows:[0]}),{idx:["Bengaluru","Delhi","Mumbai","Pune"]}),
+       Object.assign(T(["rating","count"],[[4.38,26],[3.89,9],[4.10,20]]),{idx:["Fast","Normal","Slow"]})]})},
+    {code:`full.groupby(["CustomerID", "Name", "Segment"])["Revenue"].sum().nlargest(5)`,
+     say:"<b>Q6. Best customers.</b> Diya (Office) spends the most. <b>Office</b> customers bring half of all profit. 2 customers never ordered.",
+     board:()=>({tables:[T(["Name","Segment","orders","spend"],[["Diya","Office",5,2634],["Kiran","Family",6,2106],["Meera","Office",8,1912],["Vihaan","Student",7,1779],["Isha","Office",5,1730]],{newRows:range(5)}),
+       Object.assign(T(["Revenue","Profit"],[[8118,3888],[4342,2188],[3238,1568]]),{idx:["Office","Student","Family"]})]})},
+    {code:`pd.crosstab(full["City"], full["Payment"], normalize="index") * 100`,
+     say:"<b>Q7. Stop taking cash?</b> Cash is still 19–33 % in every city. Stopping it would risk losing those orders.",
+     board:()=>({tables:[Object.assign(T(["Card","Cash","UPI"],[[40,33,27],[0,22,67],[43,19,38],[20,20,60]],{hlCols:["Cash"]}),{idx:["Bengaluru","Delhi","Mumbai","Pune"]})]})},
+    {code:`summary = pd.Series({"Orders": len(full), "Revenue (₹)": ..., ...})
+summary.to_frame()`,
+     say:"📋 A <b>one-page summary</b> for the owner. Short, clear numbers — then your recommendations.",
+     board:()=>({tables:[ser([60,"₹15,699","₹7,644","48.7 %",4.2,"Mumbai","Paneer Wrap","38.3 %",2],["Orders","Revenue","Profit","Margin","Avg rating","Best city (profit)","Best product","Late deliveries","Never ordered"],"ChaiCart Jan–Jun 2024",{newRows:range(9)})]})},
+  ],
+  quiz:{q:"Discounted orders have bigger quantities. What can we honestly say?",opts:["Discounts definitely cause bigger orders","They are linked, but other reasons (which products get discounts) may explain it","Discounts reduce sales","Nothing at all"],a:1,why:"This is a correlation in observed data, not an experiment. Other factors could explain it."},
+  remember:["Questions → tools → numbers → <b>insight</b>","Always show the <b>size</b> of the data behind a claim","Correlation ≠ causation","Cleaning decisions can change answers — say what you did","End with clear <b>recommendations</b>"],
+  discuss:["Where should the marketing budget go: a city, a category, or a customer segment? Defend it with a number.","Q4 compares orders with and without discount. Does that <b>prove</b> discounts work? What else could explain it?","With only 60 orders, how confident are you? What would you tell the owner about sample size?","Iced Lemon Tea never sold. Remove it — or was it just never promoted?","Which cleaning decision from Topic 9 could change these answers the most?"]
+}
+];
+
+/* ---------- final test ---------- */
+const TEST = [
+  {q:"pd.Series({'a': 1, 'b': 2}) — what is the index?",opts:["[0, 1]","['a', 'b']","[1, 2]","No index"],a:1},
+  {q:"Series A has labels [x, y], B has [y, z]. A + B at label z is…",opts:["B's value","0","NaN","An error"],a:2},
+  {q:"s = pd.Series(['p','q','r'], index=[2, 1, 0]). What is s.iloc[0]?",opts:["'r'","'p'","'q'","Error"],a:1},
+  {q:"One total per student (per row):",opts:["df.sum(axis=0)","df.sum(axis=1)","df.sum()","df.total()"],a:1},
+  {q:"Treat '?' as a missing value when loading:",opts:["read_csv(..., parse_dates=['?'])","read_csv(..., na_values=['?'])","read_csv(..., sep='?')","read_csv(..., usecols='?')"],a:1},
+  {q:"With a sorted date index, all of March 2024:",opts:["df.loc['2024-03']","df.iloc['2024-03']","df['2024-03']","df.at['2024-03']"],a:0},
+  {q:"Only the number columns:",opts:["df.filter('number')","df.select_dtypes('number')","df[['number']]","df.numbers()"],a:1},
+  {q:"Missing delivery time should be filled with the median of the SAME city:",opts:["fillna(df['D'].mean())","fillna(df.groupby('City')['D'].transform('median'))","dropna()","fillna(0)"],a:1},
+  {q:"Three categories from conditions (Small/Medium/Large):",opts:["np.where","np.select","pd.melt","df.T"],a:1},
+  {q:"Find customers who never ordered:",opts:["merge(how='inner')","merge(how='left', indicator=True) → '_merge' == 'left_only'","pd.concat","groupby().sum()"],a:1},
+  {q:"Wide exam table (one column per subject) → long rows:",opts:["pivot","melt","unstack","crosstab"],a:1},
+  {q:"pivot gives 'Index contains duplicate entries'. Use instead:",opts:["pivot_table with aggfunc","melt","drop","explode"],a:0},
+  {q:"How many DIFFERENT products were sold?",opts:["df['Product'].count()","df['Product'].nunique()","len(df)","df['Product'].size"],a:1},
+  {q:"Top 2 orders by revenue in EACH city:",opts:["df.nlargest(2, 'Revenue')","df.sort_values('Revenue', ascending=False).groupby('City').head(2)","df.head(2)","df.groupby('City').sum()"],a:1},
+];
+TEST.forEach((t,i)=>{const s=i%4;if(s===t.a)return;const right=t.opts[t.a];t.opts.splice(t.a,1);t.opts.splice(s,0,right);t.a=s;});
+
+const PARTS = {A:"Part A · Foundations", B:"Part B · ChaiCart case", C:"🏆 Capstone"};
+
+/* ---------- storage (safe) ---------- */
+const store = {
+  get(k,d){try{const v=localStorage.getItem(k);return v===null?d:JSON.parse(v)}catch(e){return d}},
+  set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+};
+let done = new Set(store.get("pandas2-done",[]));
+let cur = store.get("pandas2-lesson",0); if(!(cur>=0&&cur<=LESSONS.length)) cur=0;
+let step = 0, seen = new Set(), timer = null, typing = null;
+
+/* ---------- helpers ---------- */
+const esc = s => String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+function highlight(src){
+  // tiny python colouring: comments, strings, numbers, keywords
+  return esc(src).replace(/(#.*$)|(&quot;|"[^"\n]*"|'[^'\n]*')|\b(\d+\.?\d*)\b|\b(import|as|from|True|False|None|and|or|in|not|lambda|def|if|else|elif|return|for|try|except)\b/gm,
+    (m,c,s,n,k)=>c?`<span class="tk-c">${c}</span>`:s?`<span class="tk-s">${s}</span>`:n?`<span class="tk-n">${n}</span>`:`<span class="tk-k">${k}</span>`);
+}
+function fmt(v){
+  if(v===true) return `<span class="t">True</span>`;
+  if(v===false) return `<span class="f">False</span>`;
+  return esc(v);
+}
+function tableHTML(t){
+  const o = t, hc=new Set(o.hlCols||[]), nc=new Set(o.newCols||[]), gc=new Set(o.goneCols||[]);
+  const hr=new Set(o.hlRows||[]), dr=new Set(o.dimRows||[]), nr=new Set(o.newRows||[]), gr=new Set(o.goneRows||[]);
+  const cells=o.cells||{}, rc=o.rowCls||{};
+  const colCls = c => hc.has(c)?"hl":nc.has(c)?"new":gc.has(c)?"gone":o.hlHead?"hl-head":"";
+  let h = `<div class="tbl-wrap">${o.cap?`<div class="tbl-cap">${o.cap}</div>`:""}<table class="df"><thead><tr><th class="${o.hlIdx?"hl-idx":""}"></th>`;
+  o.cols.forEach(c=>h+=`<th class="${colCls(c)}">${esc(c)}</th>`);
+  h += `</tr></thead><tbody>`;
+  o.rows.forEach((row,r)=>{
+    const trc = [dr.has(r)?"dim":"", rc[r]||""].join(" ");
+    const delay = nr.has(r)?` style="animation-delay:${r*0.12}s"`:"";
+    h += `<tr class="${trc}"><th class="${o.hlIdx?"hl-idx":""} ${nr.has(r)?"new":""}"${delay}>${esc(o.idx[r])}</th>`;
+    row.forEach((v,c)=>{
+      const name=o.cols[c];
+      let cls = cells[`${r},${c}`] || (v==="NaN"?"nan":"") || (hr.has(r)?"hl":"") || (gr.has(r)?"gone":"") || (nr.has(r)?"new":"") || (colCls(name)==="hl-head"?"":colCls(name));
+      if(typeof v==="number") cls+=" num";
+      h += `<td class="${cls}"${delay}>${fmt(v)}</td>`;
+    });
+    h += `</tr>`;
+  });
+  return h + `</tbody></table></div>`;
+}
+function fileHTML(f){
+  return `<div class="file"${f.bad?` style="border-color:var(--red);background:var(--red-soft)"`:""}><div class="fname"${f.bad?` style="color:var(--red)"`:""}>${f.name}</div><pre>${f.lines.map((l,i)=>`<span style="animation-delay:${0.3+i*0.15}s">${esc(l)}</span>`).join("")}</pre></div>`;
+}
+function boardHTML(b){
+  let h = "";
+  if(b.html) h += b.html;
+  const parts = [];
+  if(b.file && b.fileFirst) parts.push(fileHTML(b.file));
+  (b.tables||[]).forEach((t,i)=>{ if(i>0 || (b.arrow && parts.length)) parts.push(`<span class="arrow">➜</span>`); parts.push(tableHTML(t)); });
+  if(b.file && !b.fileFirst){ if(parts.length) parts.push(`<span class="arrow">➜</span>`); parts.push(fileHTML(b.file)); }
+  if(parts.length) h += `<div class="tables">${parts.join("")}</div>`;
+  if(b.legend) h += `<div class="legend"><span class="g1">Delhi</span><span class="g2">Mumbai</span><span class="g3">Pune</span><span class="g4">Bengaluru</span></div>`;
+  if(b.out) h += `<div class="out">${esc(b.out)}</div>`;
+  if(b.tip) h += `<div class="tip">💡 ${b.tip}</div>`;
+  return h;
+}
+
+/* ---------- render ---------- */
+const $ = s => document.querySelector(s);
+function renderTOC(){
+  const best = store.get("pandas2-best",null);
+  $("#toc").innerHTML = LESSONS.map((l,i)=>(i===0||l.part!==LESSONS[i-1].part?`<li class="sec">${PARTS[l.part]}</li>`:"")+`<li class="${done.has(i)?"done":""}"><button class="${i===cur?"active":""}" data-i="${i}"><span class="num">${done.has(i)?"✓":i+1}</span>${l.icon} ${l.title}</button></li>`).join("")
+    + `<li class="sec">🏁 Finish</li><li class="${best===TEST.length?"done":""}"><button class="${cur===LESSONS.length?"active":""}" data-i="${LESSONS.length}"><span class="num">${best===TEST.length?"✓":"🏆"}</span>Final Test${best!==null?` (${best}/${TEST.length})`:""}</button></li>`;
+  $("#toc").querySelectorAll("button").forEach(b=>b.onclick=()=>{go(+b.dataset.i);$("#side").classList.remove("open")});
+}
+function go(i){
+  stopAuto(); cur=i; step=0; seen=new Set(); store.set("pandas2-lesson",cur);
+  renderLesson(); renderTOC(); window.scrollTo({top:0,behavior:"smooth"});
+}
+function renderTest(){
+  const answered = {};
+  $("#main").innerHTML = `
+    <button class="btn menu-btn" id="menuBtn">☰ Topics</button>
+    <div class="lesson-head"><span class="big">🏆</span><div><h2>Final Test</h2><p>${TEST.length} questions from all the topics. Pick one answer for each question — your first click counts!</p></div></div>
+    ${TEST.map((t,n)=>`<div class="card quiz" style="margin-top:14px" data-n="${n}"><div><b>Q${n+1}.</b> ${esc(t.q)}</div><div class="opts">${t.opts.map((o,i)=>`<button class="opt mono" data-i="${i}">${esc(o)}</button>`).join("")}</div></div>`).join("")}
+    <div class="card" style="margin-top:20px;text-align:center"><div id="score" style="font-size:22px;font-weight:700">Score: 0 / ${TEST.length}</div><div id="scoreMsg" style="color:var(--muted)">Answer all questions to see your result.</div>
+    <button class="btn" id="retry" style="margin-top:10px">↺ Try again</button></div>`;
+  $("#menuBtn").onclick=()=>$("#side").classList.toggle("open");
+  $("#retry").onclick=()=>go(LESSONS.length);
+  document.querySelectorAll(".quiz[data-n]").forEach(card=>{
+    const n=+card.dataset.n, t=TEST[n];
+    card.querySelectorAll(".opt").forEach(b=>b.onclick=()=>{
+      if(n in answered) return;
+      const i=+b.dataset.i; answered[n]=i===t.a;
+      b.classList.add(i===t.a?"right":"wrong");
+      card.querySelectorAll(".opt")[t.a].classList.add("right");
+      const got=Object.values(answered).filter(Boolean).length, all=Object.keys(answered).length;
+      $("#score").textContent=`Score: ${got} / ${TEST.length}`;
+      if(all===TEST.length){
+        $("#scoreMsg").textContent = got===TEST.length?"🌟 Perfect! You are a pandas star!":got>=Math.ceil(TEST.length*0.7)?"🎉 Great job! Review the red ones and try again.":"💪 Good try! Watch the lessons again and retake the test.";
+        const best=store.get("pandas2-best",0); if(got>=best) store.set("pandas2-best",got); renderTOC();
+      }
+    });
+  });
+}
+function renderLesson(){
+  if(cur===LESSONS.length) return renderTest();
+  const L = LESSONS[cur];
+  $("#main").innerHTML = `
+    <button class="btn menu-btn" id="menuBtn">☰ Topics</button>
+    <div class="lesson-head"><span class="big">${L.icon}</span><div><h2>${cur+1}. ${L.title}</h2><p>${L.sub}</p></div></div>
+    <div class="story">📖 ${L.story}</div>
+    <div class="stage">
+      <div>
+        <div class="card code-card">
+          <div class="code-top"><span class="dot" style="background:#ff5f57"></span><span class="dot" style="background:#febc2e"></span><span class="dot" style="background:#28c840"></span><span class="lbl" id="stepLbl"></span><button class="copy" id="copyBtn">Copy</button></div>
+          <pre class="code" id="code"></pre>
+        </div>
+        <div class="card teacher" style="margin-top:14px"><span class="face">👩‍🏫</span><div class="bubble" id="say"></div></div>
+        <div class="controls">
+          <button class="btn" id="prev">◀ Back</button>
+          <button class="btn primary" id="next">Next ▶</button>
+          <button class="btn" id="auto">▶ Auto play</button>
+          <div class="steps-dots" id="dots"></div>
+        </div>
+      </div>
+      <div class="card board"><div class="board-title">👀 Watch the table</div><div id="board" class="board"></div></div>
+    </div>
+    <div class="card quiz" id="quiz"></div>
+    <div class="card remember"><h3 style="margin:0">📝 Remember</h3><ul>${L.remember.map(r=>`<li>${r}</li>`).join("")}</ul></div>
+    ${L.discuss?`<div class="card discuss"><h3>🗣️ Discuss in class</h3><ol>${L.discuss.map(d=>`<li>${d}</li>`).join("")}</ol></div>`:""}
+    <div class="nav-bottom">
+      <button class="btn" id="prevL" ${cur===0?"disabled":""}>◀ Previous topic</button>
+      <button class="btn primary" id="nextL">${cur===LESSONS.length-1?"Take the Final Test 🏆":"Next topic ▶"}</button>
+    </div>`;
+  $("#menuBtn").onclick=()=>$("#side").classList.toggle("open");
+  $("#prev").onclick=()=>{stopAuto();show(step-1)};
+  $("#next").onclick=()=>{stopAuto();show(step+1)};
+  $("#auto").onclick=()=>timer?stopAuto():startAuto();
+  $("#prevL").onclick=()=>go(cur-1);
+  $("#nextL").onclick=()=>go(cur+1);
+  $("#copyBtn").onclick=()=>{try{navigator.clipboard.writeText(L.steps[step].code);$("#copyBtn").textContent="Copied!";setTimeout(()=>{const b=$("#copyBtn");if(b)b.textContent="Copy"},1200)}catch(e){}};
+  renderQuiz();
+  show(0);
+}
+function show(i){
+  if(cur===LESSONS.length) return;
+  const L = LESSONS[cur];
+  if(i<0||i>=L.steps.length) return;
+  step=i; seen.add(i);
+  const S = L.steps[i];
+  $("#stepLbl").textContent = `Step ${i+1} of ${L.steps.length}`;
+  typeCode(S.code);
+  $("#say").outerHTML = `<div class="bubble" id="say">${S.say}</div>`;
+  $("#board").innerHTML = boardHTML(S.board());
+  $("#dots").innerHTML = L.steps.map((_,k)=>`<span class="${k===i?"on":seen.has(k)?"seen":""}"></span>`).join("");
+  $("#prev").disabled = i===0;
+  $("#next").disabled = i===L.steps.length-1;
+}
+function typeCode(src){
+  clearInterval(typing);
+  const el=$("#code"); let n=0;
+  const speed = Math.max(8, 900/src.length);
+  typing=setInterval(()=>{
+    n+=2;
+    if(n>=src.length){clearInterval(typing);el.innerHTML=highlight(src);return}
+    el.innerHTML=esc(src.slice(0,n))+`<span class="caret"></span>`;
+  },speed);
+}
+function startAuto(){
+  $("#auto").textContent="⏸ Pause";
+  if(step===LESSONS[cur].steps.length-1) show(0);
+  timer=setInterval(()=>{
+    if(step>=LESSONS[cur].steps.length-1){stopAuto();return}
+    show(step+1);
+  },5000);
+}
+function stopAuto(){clearInterval(timer);timer=null;const a=$("#auto");if(a)a.textContent="▶ Auto play"}
+function renderQuiz(){
+  const Q = LESSONS[cur].quiz;
+  $("#quiz").innerHTML = `<h3>🧠 Quick quiz</h3><div>${Q.q}</div><div class="opts">${Q.opts.map((o,i)=>`<button class="opt mono" data-i="${i}">${esc(o)}</button>`).join("")}</div><div class="feedback" id="fb"></div>`;
+  $("#quiz").querySelectorAll(".opt").forEach(b=>b.onclick=()=>{
+    const i=+b.dataset.i;
+    $("#quiz").querySelectorAll(".opt").forEach(x=>x.classList.remove("right","wrong"));
+    if(i===Q.a){
+      b.classList.add("right"); $("#fb").innerHTML=`🎉 Correct! ${Q.why}`; $("#fb").style.color="var(--green)";
+      done.add(cur); store.set("pandas2-done",[...done]); renderTOC();
+    } else {
+      b.classList.add("wrong"); $("#fb").innerHTML=`Not quite — try again! 💪`; $("#fb").style.color="var(--red)";
+    }
+  });
+}
+
+/* keyboard: ← → to move steps */
+document.addEventListener("keydown",e=>{
+  if(e.key==="ArrowRight"){stopAuto();show(step+1)}
+  if(e.key==="ArrowLeft"){stopAuto();show(step-1)}
+});
+$("#themeBtn").onclick=()=>{
+  const r=document.documentElement;
+  const dark = r.dataset.theme ? r.dataset.theme==="dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+  r.dataset.theme = dark?"light":"dark"; store.set("pandas2-theme",r.dataset.theme);
+};
+$("#resetBtn").onclick=()=>{done=new Set();store.set("pandas2-done",[]);renderTOC()};
+const savedTheme=store.get("pandas2-theme",null); if(savedTheme) document.documentElement.dataset.theme=savedTheme;
+
+renderTOC(); renderLesson();
+</script>
+</body>
+</html>

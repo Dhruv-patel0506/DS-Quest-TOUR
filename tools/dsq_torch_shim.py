@@ -1,0 +1,961 @@
+# A small stand-in for PyTorch, written in NumPy, so PyTorch code can run in the browser (real PyTorch cannot).
+# It follows the real names: torch.tensor, requires_grad, backward(), torch.nn, torch.optim, DataLoader ...
+# Tools: tools/embed_torch_shim.js copies this file into public/js/content/m23c_torch_shim.js (the sheet runs it first).
+import sys, types, io, pickle, math, builtins
+import numpy as np
+
+_st = {"grad": True, "rng": np.random.default_rng(0)}
+
+
+class _DT:
+    def __init__(self, name, t):
+        self.name, self.np = name, np.dtype(t)
+
+    def __repr__(self):
+        return "torch." + self.name
+
+
+float32, float64, int64, int32, bool_ = _DT("float32", "float32"), _DT("float64", "float64"), _DT("int64", "int64"), _DT("int32", "int32"), _DT("bool", "bool")
+_DTS = {a.np: a for a in (float32, float64, int64, int32, bool_)}
+
+
+class Size(tuple):
+    def __repr__(self):
+        return "torch.Size(" + str(list(self)) + ")"
+
+    def numel(self):
+        return int(np.prod(self)) if len(self) else 1
+
+
+def _arr(x, dtype=None):
+    a = x._a if isinstance(x, Tensor) else np.array(x)
+    if dtype is not None:
+        return a.astype(dtype.np)
+    if a.dtype == np.float64:
+        return a.astype(np.float32)
+    if a.dtype.kind in "iu" and a.dtype != np.int64:
+        return a.astype(np.int64)
+    return a
+
+
+def _ub(g, shape):
+    while g.ndim > len(shape):
+        g = g.sum(axis=0)
+    for i, s in enumerate(shape):
+        if s == 1 and g.shape[i] != 1:
+            g = g.sum(axis=i, keepdims=True)
+    return g
+
+
+def _fix(a, *ts):
+    if a.dtype == np.float64 and not any(t._a.dtype == np.float64 for t in ts):
+        return a.astype(np.float32)
+    return a
+
+
+def _mk(a, parents, bw, op):
+    need = _st["grad"] and any(p.requires_grad for p in parents)
+    out = Tensor(a, need, tuple(parents) if need else ())
+    if need:
+        out._bw, out._op = bw, op
+    return out
+
+
+def _t(x):
+    return x if isinstance(x, Tensor) else Tensor(_arr(x))
+
+
+class _GradFn:
+    def __init__(self, name):
+        self._n = name
+
+    def name(self):
+        return self._n
+
+    def __repr__(self):
+        return "<" + self._n + ">"
+
+
+class Tensor:
+    __array_priority__ = 1000
+
+    def __init__(self, a, requires_grad=False, _prev=()):
+        self._a, self.requires_grad, self._g, self._prev, self._bw, self._op = np.asarray(a), bool(requires_grad), None, _prev, None, ""
+
+    # ---------- info ----------
+    @property
+    def shape(self):
+        return Size(self._a.shape)
+
+    @property
+    def ndim(self):
+        return self._a.ndim
+
+    @property
+    def dtype(self):
+        return _DTS.get(self._a.dtype, float32)
+
+    @property
+    def device(self):
+        return "cpu"
+
+    @property
+    def is_leaf(self):
+        return self._bw is None
+
+    @property
+    def grad_fn(self):
+        return _GradFn(self._op) if self._bw is not None else None
+
+    @property
+    def data(self):
+        return Tensor(self._a)
+
+    @data.setter
+    def data(self, v):
+        self._a = _arr(v).copy()
+
+    @property
+    def grad(self):
+        return None if self._g is None else Tensor(self._g)
+
+    @grad.setter
+    def grad(self, v):
+        self._g = None if v is None else _arr(v)
+
+    @property
+    def T(self):
+        return self.transpose(0, 1) if self._a.ndim == 2 else self
+
+    def t(self):
+        return self.T
+
+    def dim(self):
+        return self._a.ndim
+
+    def numel(self):
+        return int(self._a.size)
+
+    def size(self, d=None):
+        return self.shape if d is None else self._a.shape[d]
+
+    def __len__(self):
+        return self._a.shape[0]
+
+    def item(self):
+        return self._a.item()
+
+    def tolist(self):
+        return self._a.tolist()
+
+    def numpy(self):
+        return self._a
+
+    def __float__(self):
+        return float(self._a)
+
+    def __int__(self):
+        return int(self._a)
+
+    def __bool__(self):
+        return bool(self._a)
+
+    def __iter__(self):
+        for i in range(len(self)):
+            yield self[i]
+
+    def __repr__(self):
+        a = self._a
+        if a.dtype.kind == "f":
+            full = bool(np.all(a == np.round(a))) if a.size else True
+            one = (lambda v: "%.0f." % v) if full else (lambda v: "%.4f" % v)
+            w = builtins.max([len(one(v)) for v in a.ravel()] + [1])
+            fm = {"float_kind": lambda v: one(v).rjust(w)}
+        else:
+            fm = None
+        body = np.array2string(a, separator=", ", prefix="tensor(", formatter=fm) if a.ndim else (fm["float_kind"](a.item()).strip() if fm else str(a.item()))
+        extra = ""
+        if a.dtype == np.float64:
+            extra += ", dtype=torch.float64"
+        if self._bw is not None:
+            extra += ", grad_fn=<" + self._op + ">"
+        elif self.requires_grad:
+            extra += ", requires_grad=True"
+        return "tensor(" + body + extra + ")"
+
+    # ---------- arithmetic ----------
+    def __add__(self, o):
+        o = _t(o)
+        return _mk(_fix(self._a + o._a, self, o), [self, o], lambda g: [_ub(g, self._a.shape), _ub(g, o._a.shape)], "AddBackward0")
+
+    __radd__ = __add__
+
+    def __neg__(self):
+        return _mk(-self._a, [self], lambda g: [-g], "NegBackward0")
+
+    def __sub__(self, o):
+        o = _t(o)
+        return _mk(_fix(self._a - o._a, self, o), [self, o], lambda g: [_ub(g, self._a.shape), _ub(-g, o._a.shape)], "SubBackward0")
+
+    def __rsub__(self, o):
+        return _t(o).__sub__(self)
+
+    def __mul__(self, o):
+        o = _t(o)
+        return _mk(_fix(self._a * o._a, self, o), [self, o], lambda g: [_ub(g * o._a, self._a.shape), _ub(g * self._a, o._a.shape)], "MulBackward0")
+
+    __rmul__ = __mul__
+
+    def __truediv__(self, o):
+        o = _t(o)
+        return _mk(_fix(self._a / o._a, self, o), [self, o], lambda g: [_ub(g / o._a, self._a.shape), _ub(-g * self._a / (o._a ** 2), o._a.shape)], "DivBackward0")
+
+    def __rtruediv__(self, o):
+        return _t(o).__truediv__(self)
+
+    def __pow__(self, p):
+        return _mk(_fix(self._a ** p, self), [self], lambda g: [g * p * self._a ** (p - 1)], "PowBackward0")
+
+    def __matmul__(self, o):
+        o = _t(o)
+        a, b = self._a, o._a
+
+        def bw(g):
+            A = a.reshape(1, -1) if a.ndim == 1 else a
+            B = b.reshape(-1, 1) if b.ndim == 1 else b
+            G = g.reshape(A.shape[0], B.shape[1])
+            return [(G @ B.T).reshape(a.shape), (A.T @ G).reshape(b.shape)]
+        return _mk(_fix(a @ b, self, o), [self, o], bw, "MmBackward0")
+
+    def __rmatmul__(self, o):
+        return _t(o).__matmul__(self)
+
+    def __lt__(self, o): return Tensor(self._a < _t(o)._a)
+    def __le__(self, o): return Tensor(self._a <= _t(o)._a)
+    def __gt__(self, o): return Tensor(self._a > _t(o)._a)
+    def __ge__(self, o): return Tensor(self._a >= _t(o)._a)
+    def __eq__(self, o): return Tensor(self._a == _t(o)._a)
+    def __ne__(self, o): return Tensor(self._a != _t(o)._a)
+    __hash__ = object.__hash__
+    def __and__(self, o): return Tensor(self._a & _t(o)._a)
+    def __or__(self, o): return Tensor(self._a | _t(o)._a)
+    def __invert__(self): return Tensor(~self._a)
+
+    # in-place updates (used on parameters inside torch.no_grad(), or on .data)
+    def __iadd__(self, o):
+        self._a += _t(o)._a
+        return self
+
+    def __isub__(self, o):
+        self._a -= _t(o)._a
+        return self
+
+    def __imul__(self, o):
+        self._a *= _t(o)._a
+        return self
+
+    def __itruediv__(self, o):
+        self._a /= _t(o)._a
+        return self
+
+    def add_(self, o): return self.__iadd__(o)
+    def sub_(self, o): return self.__isub__(o)
+    def mul_(self, o): return self.__imul__(o)
+
+    def zero_(self):
+        self._a[...] = 0
+        return self
+
+    def fill_(self, v):
+        self._a[...] = v
+        return self
+
+    def requires_grad_(self, flag=True):
+        self.requires_grad = flag
+        return self
+
+    # ---------- indexing ----------
+    def __getitem__(self, idx):
+        def conv(i):
+            if isinstance(i, Tensor):
+                return i._a
+            if isinstance(i, tuple):
+                return tuple(conv(j) for j in i)
+            return i
+        ix = conv(idx)
+
+        def bw(g):
+            z = np.zeros_like(self._a)
+            np.add.at(z, ix, g)
+            return [z]
+        return _mk(self._a[ix], [self], bw, "IndexBackward0")
+
+    def __setitem__(self, idx, v):
+        self._a[idx._a if isinstance(idx, Tensor) else idx] = _t(v)._a
+
+    # ---------- maths ----------
+    def exp(self):
+        o = np.exp(self._a)
+        return _mk(o, [self], lambda g: [g * o], "ExpBackward0")
+
+    def log(self):
+        return _mk(np.log(self._a), [self], lambda g: [g / self._a], "LogBackward0")
+
+    def sqrt(self):
+        o = np.sqrt(self._a)
+        return _mk(o, [self], lambda g: [g / (2 * o)], "SqrtBackward0")
+
+    def abs(self):
+        return _mk(np.abs(self._a), [self], lambda g: [g * np.sign(self._a)], "AbsBackward0")
+
+    def relu(self):
+        return _mk(np.where(self._a > 0, self._a, 0).astype(self._a.dtype), [self], lambda g: [g * (self._a > 0)], "ReluBackward0")
+
+    def sigmoid(self):
+        o = 1 / (1 + np.exp(-self._a.astype(np.float64)))
+        o = o.astype(self._a.dtype if self._a.dtype.kind == "f" else np.float32)
+        return _mk(o, [self], lambda g: [g * o * (1 - o)], "SigmoidBackward0")
+
+    def tanh(self):
+        o = np.tanh(self._a)
+        return _mk(o, [self], lambda g: [g * (1 - o ** 2)], "TanhBackward0")
+
+    def clamp(self, min=None, max=None):
+        lo = -np.inf if min is None else min
+        hi = np.inf if max is None else max
+        return _mk(np.clip(self._a, lo, hi), [self], lambda g: [g * ((self._a >= lo) & (self._a <= hi))], "ClampBackward1")
+
+    def softmax(self, dim):
+        return softmax(self, dim)
+
+    def sum(self, dim=None, keepdim=False):
+        o = self._a.sum(axis=dim, keepdims=keepdim)
+
+        def bw(g):
+            if dim is not None and not keepdim:
+                g = np.expand_dims(g, dim)
+            return [np.broadcast_to(g, self._a.shape).copy()]
+        return _mk(o, [self], bw, "SumBackward0" if dim is None else "SumBackward1")
+
+    def mean(self, dim=None, keepdim=False):
+        n = self._a.size if dim is None else (np.prod([self._a.shape[d] for d in (dim if isinstance(dim, (tuple, list)) else [dim])]))
+        o = self._a.mean(axis=dim, keepdims=keepdim)
+
+        def bw(g):
+            if dim is not None and not keepdim:
+                g = np.expand_dims(g, dim)
+            return [np.broadcast_to(g, self._a.shape).copy() / n]
+        return _mk(o, [self], bw, "MeanBackward0" if dim is None else "MeanBackward1")
+
+    def max(self, dim=None, keepdim=False):
+        if dim is None:
+            flat = int(self._a.argmax())
+            def bw0(g):
+                z = np.zeros(self._a.size, dtype=self._a.dtype)
+                z[flat] = g
+                return [z.reshape(self._a.shape)]
+            return _mk(self._a.max(), [self], bw0, "MaxBackward1")
+        idx = np.expand_dims(self._a.argmax(axis=dim), dim)
+        vals = np.take_along_axis(self._a, idx, dim)
+
+        def bw(g):
+            z = np.zeros_like(self._a)
+            np.put_along_axis(z, idx, g if keepdim else np.expand_dims(g, dim), dim)
+            return [z]
+        v = _mk(vals if keepdim else vals.squeeze(dim), [self], bw, "MaxBackward0")
+        return _MaxRes(v, Tensor(idx if keepdim else idx.squeeze(dim)))
+
+    def min(self, dim=None, keepdim=False):
+        r = (-self).max(dim, keepdim)
+        return -r if dim is None else _MaxRes(-r.values, r.indices)
+
+    def argmax(self, dim=None, keepdim=False):
+        r = self._a.argmax() if dim is None else self._a.argmax(axis=dim)
+        if keepdim and dim is not None:
+            r = np.expand_dims(r, dim)
+        return Tensor(np.array(r, dtype=np.int64))
+
+    def argmin(self, dim=None):
+        return Tensor(np.array(self._a.argmin() if dim is None else self._a.argmin(axis=dim), dtype=np.int64))
+
+    def var(self, dim=None, unbiased=True, keepdim=False):
+        n = self._a.size if dim is None else self._a.shape[dim]
+        d = self - self.mean(dim, True) if dim is not None else self - self.mean()
+        return (d * d).sum(dim, keepdim) / (n - 1 if unbiased else n)
+
+    def std(self, dim=None, unbiased=True, keepdim=False):
+        return self.var(dim, unbiased, keepdim).sqrt()
+
+    def norm(self):
+        return (self * self).sum().sqrt()
+
+    # ---------- shape ----------
+    def reshape(self, *shape):
+        if len(shape) == 1 and isinstance(shape[0], (tuple, list)):
+            shape = tuple(shape[0])
+        old = self._a.shape
+        return _mk(self._a.reshape(shape), [self], lambda g: [g.reshape(old)], "ViewBackward0")
+
+    view = reshape
+
+    def flatten(self, start_dim=0):
+        return self.reshape(self._a.shape[:start_dim] + (-1,))
+
+    def unsqueeze(self, dim):
+        return self.reshape(np.expand_dims(self._a, dim).shape)
+
+    def squeeze(self, dim=None):
+        return self.reshape(np.squeeze(self._a, axis=dim).shape)
+
+    def transpose(self, a, b):
+        return _mk(np.swapaxes(self._a, a, b), [self], lambda g: [np.swapaxes(g, a, b)], "TransposeBackward0")
+
+    # ---------- types / copies ----------
+    def _cast(self, dt):
+        src = self._a.dtype
+        if src.kind == "f" and dt.np.kind == "f":
+            return _mk(self._a.astype(dt.np), [self], lambda g: [g.astype(src)], "ToCopyBackward0")
+        return Tensor(self._a.astype(dt.np))
+
+    def float(self): return self._cast(float32)
+    def double(self): return self._cast(float64)
+    def long(self): return self._cast(int64)
+    def int(self): return self._cast(int32)
+    def bool(self): return self._cast(bool_)
+
+    def to(self, *a, **k):
+        for x in list(a) + list(k.values()):
+            if isinstance(x, _DT):
+                return self._cast(x)
+        return self
+
+    def detach(self):
+        return Tensor(self._a)
+
+    def clone(self):
+        return _mk(self._a.copy(), [self], lambda g: [g], "CloneBackward0")
+
+    def cpu(self):
+        return self
+
+    # ---------- backward ----------
+    def backward(self, gradient=None):
+        if not self.requires_grad:
+            raise RuntimeError("element 0 of tensors does not require grad and does not have a grad_fn")
+        if gradient is None:
+            if self._a.size != 1:
+                raise RuntimeError("grad can be implicitly created only for scalar outputs")
+            gradient = np.ones_like(self._a)
+        order, seen = [], set()
+
+        def visit(n):
+            if id(n) in seen:
+                return
+            seen.add(id(n))
+            for p in n._prev:
+                visit(p)
+            order.append(n)
+        sys.setrecursionlimit(max(sys.getrecursionlimit(), 10000))
+        visit(self)
+        for n in order:
+            if n._bw is not None:
+                n._g = None
+        self._g = _arr(gradient)
+        for n in reversed(order):
+            if n._bw is None or n._g is None:
+                continue
+            for p, g in zip(n._prev, n._bw(n._g)):
+                if p.requires_grad and g is not None:
+                    g = np.asarray(g)
+                    p._g = g.copy() if p._g is None else np.asarray(p._g + g)
+
+
+class _MaxRes:
+    def __init__(self, v, i):
+        self.values, self.indices = v, i
+
+    def __iter__(self):
+        return iter((self.values, self.indices))
+
+
+class Parameter(Tensor):
+    def __init__(self, t):
+        Tensor.__init__(self, _arr(t).copy(), True)
+
+
+# ---------- creation ----------
+def tensor(data, dtype=None, requires_grad=False):
+    return Tensor(_arr(data, dtype).copy(), requires_grad)
+
+
+def from_numpy(a):
+    return Tensor(np.asarray(a))
+
+
+def _shape(s):
+    if len(s) == 1 and isinstance(s[0], (tuple, list)):
+        return tuple(s[0])
+    return tuple(int(x) for x in s)
+
+
+def zeros(*s, dtype=None, requires_grad=False): return Tensor(np.zeros(_shape(s), (dtype or float32).np), requires_grad)
+def ones(*s, dtype=None, requires_grad=False): return Tensor(np.ones(_shape(s), (dtype or float32).np), requires_grad)
+def full(size, v, dtype=None): return Tensor(np.full(tuple(size), v).astype((dtype or (int64 if isinstance(v, int) else float32)).np))
+def zeros_like(t): return Tensor(np.zeros_like(t._a))
+def ones_like(t): return Tensor(np.ones_like(t._a))
+def eye(n): return Tensor(np.eye(n, dtype=np.float32))
+def arange(a, b=None, step=1, dtype=None):
+    r = np.arange(a) if b is None else np.arange(a, b, step)
+    return Tensor(r.astype(dtype.np) if dtype else (r.astype(np.float32) if r.dtype.kind == "f" else r.astype(np.int64)))
+def linspace(a, b, steps): return Tensor(np.linspace(a, b, steps).astype(np.float32))
+def manual_seed(n):
+    _st["rng"] = np.random.default_rng(n)
+    return n
+def rand(*s, requires_grad=False): return Tensor(_st["rng"].random(_shape(s)).astype(np.float32), requires_grad)
+def randn(*s, requires_grad=False): return Tensor(_st["rng"].standard_normal(_shape(s)).astype(np.float32), requires_grad)
+def randint(lo, hi, size): return Tensor(_st["rng"].integers(lo, hi, size=tuple(size)).astype(np.int64))
+def randperm(n): return Tensor(_st["rng"].permutation(n).astype(np.int64))
+def is_tensor(x): return isinstance(x, Tensor)
+
+
+def cat(ts, dim=0):
+    ts = [_t(x) for x in ts]
+    sizes = [x._a.shape[dim] for x in ts]
+
+    def bw(g):
+        out, i = [], 0
+        for s in sizes:
+            sl = [slice(None)] * g.ndim
+            sl[dim] = slice(i, i + s)
+            out.append(g[tuple(sl)])
+            i += s
+        return out
+    return _mk(np.concatenate([x._a for x in ts], axis=dim), ts, bw, "CatBackward0")
+
+
+def stack(ts, dim=0):
+    return cat([x.unsqueeze(dim) for x in ts], dim)
+
+
+def where(c, x, y):
+    c, x, y = _t(c), _t(x), _t(y)
+    return _mk(_fix(np.where(c._a, x._a, y._a), x, y), [x, y], lambda g: [_ub(g * c._a, x._a.shape), _ub(g * (~c._a), y._a.shape)], "WhereBackward0")
+
+
+def allclose(a, b, rtol=1e-5, atol=1e-8): return bool(np.allclose(_t(a)._a, _t(b)._a, rtol=rtol, atol=atol))
+def equal(a, b): return bool(np.array_equal(_t(a)._a, _t(b)._a))
+def matmul(a, b): return _t(a) @ b
+def exp(x): return x.exp()
+def log(x): return x.log()
+def sqrt(x): return x.sqrt()
+def abs(x): return x.abs()
+def relu(x): return x.relu()
+def sigmoid(x): return x.sigmoid()
+def tanh(x): return x.tanh()
+def sum(x, dim=None, keepdim=False): return x.sum(dim, keepdim)
+def mean(x, dim=None, keepdim=False): return x.mean(dim, keepdim)
+def argmax(x, dim=None): return x.argmax(dim)
+def clamp(x, min=None, max=None): return x.clamp(min, max)
+def softmax(x, dim):
+    e = (x - x.max(dim, True).values.detach()).exp()
+    return e / e.sum(dim, True)
+def log_softmax(x, dim):
+    z = x - x.max(dim, True).values.detach()
+    return z - z.exp().sum(dim, True).log()
+
+
+class _NoGrad:
+    def __init__(self, flag=False):
+        self.flag = flag
+
+    def __enter__(self):
+        self.prev = _st["grad"]
+        _st["grad"] = self.flag
+
+    def __exit__(self, *a):
+        _st["grad"] = self.prev
+
+    def __call__(self, fn=None):
+        if fn is None:
+            return self
+        def wrapped(*a, **k):
+            with _NoGrad(self.flag):
+                return fn(*a, **k)
+        return wrapped
+
+
+no_grad = _NoGrad(False)
+enable_grad = _NoGrad(True)
+def set_grad_enabled(flag): return _NoGrad(bool(flag))
+def is_grad_enabled(): return _st["grad"]
+
+
+class device:
+    def __init__(self, name="cpu"):
+        self.type = name
+
+    def __repr__(self):
+        return "device(type='" + self.type + "')"
+
+
+class cuda:
+    @staticmethod
+    def is_available():
+        return False
+
+
+# ---------- nn ----------
+def _pack(o):
+    if isinstance(o, Tensor):
+        return ("__t__", o._a.copy())
+    if isinstance(o, dict):
+        return {k: _pack(v) for k, v in o.items()}
+    if isinstance(o, (list, tuple)):
+        return [_pack(v) for v in o]
+    return o
+
+
+def _unpack(o):
+    if isinstance(o, tuple) and len(o) == 2 and o[0] == "__t__":
+        return Tensor(o[1])
+    if isinstance(o, dict):
+        return {k: _unpack(v) for k, v in o.items()}
+    if isinstance(o, list):
+        return [_unpack(v) for v in o]
+    return o
+
+
+def save(obj, f):
+    data = pickle.dumps(_pack(obj))
+    if isinstance(f, str):
+        open(f, "wb").write(data)
+    else:
+        f.write(data)
+
+
+def load(f, weights_only=None, map_location=None):
+    data = open(f, "rb").read() if isinstance(f, str) else f.read()
+    return _unpack(pickle.loads(data))
+
+
+class Module:
+    def __init__(self):
+        object.__setattr__(self, "_params", {})
+        object.__setattr__(self, "_mods", {})
+        object.__setattr__(self, "training", True)
+
+    def __setattr__(self, k, v):
+        if isinstance(v, Parameter):
+            self._params[k] = v
+        elif isinstance(v, Module):
+            self._mods[k] = v
+        else:
+            object.__setattr__(self, k, v)
+
+    def __getattr__(self, k):
+        d = self.__dict__
+        if "_params" in d and k in d["_params"]:
+            return d["_params"][k]
+        if "_mods" in d and k in d["_mods"]:
+            return d["_mods"][k]
+        raise AttributeError(k)
+
+    def __call__(self, *a, **k):
+        return self.forward(*a, **k)
+
+    def named_parameters(self, prefix=""):
+        for k, p in self._params.items():
+            yield prefix + k, p
+        for k, m in self._mods.items():
+            yield from m.named_parameters(prefix + k + ".")
+
+    def parameters(self):
+        for _, p in self.named_parameters():
+            yield p
+
+    def children(self):
+        return iter(self._mods.values())
+
+    def state_dict(self):
+        from collections import OrderedDict
+        return OrderedDict((k, Tensor(p._a.copy())) for k, p in self.named_parameters())
+
+    def load_state_dict(self, sd):
+        for k, p in self.named_parameters():
+            p._a[...] = _t(sd[k])._a
+
+    def zero_grad(self):
+        for p in self.parameters():
+            p._g = None
+
+    def train(self, mode=True):
+        object.__setattr__(self, "training", mode)
+        for m in self._mods.values():
+            m.train(mode)
+        return self
+
+    def eval(self):
+        return self.train(False)
+
+    def extra_repr(self):
+        return ""
+
+    def __repr__(self):
+        head = type(self).__name__ + "("
+        if not self._mods:
+            return head + self.extra_repr() + ")"
+        lines = [head]
+        for k, m in self._mods.items():
+            lines.append("  (" + k + "): " + repr(m).replace(chr(10), chr(10) + "  "))
+        return chr(10).join(lines) + chr(10) + ")"
+
+
+class Linear(Module):
+    def __init__(self, n_in, n_out, bias=True):
+        super().__init__()
+        self.n_in, self.n_out, self.has_bias = n_in, n_out, bias
+        bound = 1 / math.sqrt(n_in)
+        self.weight = Parameter(_st["rng"].uniform(-bound, bound, (n_out, n_in)).astype(np.float32))
+        if bias:
+            self.bias = Parameter(_st["rng"].uniform(-bound, bound, (n_out,)).astype(np.float32))
+
+    def forward(self, x):
+        y = x @ self.weight.T
+        return y + self.bias if self.has_bias else y
+
+    def extra_repr(self):
+        return "in_features=%d, out_features=%d, bias=%s" % (self.n_in, self.n_out, self.has_bias)
+
+
+class ReLU(Module):
+    def forward(self, x): return x.relu()
+class Sigmoid(Module):
+    def forward(self, x): return x.sigmoid()
+class Tanh(Module):
+    def forward(self, x): return x.tanh()
+class Identity(Module):
+    def forward(self, x): return x
+class Flatten(Module):
+    def forward(self, x): return x.flatten(1)
+
+
+class Softmax(Module):
+    def __init__(self, dim=-1):
+        super().__init__()
+        self.dim = dim
+
+    def forward(self, x): return softmax(x, self.dim)
+
+    def extra_repr(self): return "dim=" + str(self.dim)
+
+
+class Dropout(Module):
+    def __init__(self, p=0.5):
+        super().__init__()
+        self.p = p
+
+    def forward(self, x):
+        if not self.training or self.p == 0:
+            return x
+        m = (_st["rng"].random(x._a.shape) >= self.p).astype(np.float32) / (1 - self.p)
+        return x * Tensor(m)
+
+    def extra_repr(self): return "p=%s, inplace=False" % self.p
+
+
+class Sequential(Module):
+    def __init__(self, *mods):
+        super().__init__()
+        for i, m in enumerate(mods):
+            self._mods[str(i)] = m
+
+    def forward(self, x):
+        for m in self._mods.values():
+            x = m(x)
+        return x
+
+    def __getitem__(self, i):
+        return list(self._mods.values())[i]
+
+    def __len__(self):
+        return len(self._mods)
+
+
+def _red(v, how):
+    return v.mean() if how == "mean" else (v.sum() if how == "sum" else v)
+
+
+def mse_loss(p, y, reduction="mean"): return _red((p - y) ** 2, reduction)
+def l1_loss(p, y, reduction="mean"): return _red((p - y).abs(), reduction)
+def cross_entropy(z, y, reduction="mean"):
+    lp = log_softmax(z, 1)
+    return _red(-lp[arange(len(y)), y], reduction)
+def binary_cross_entropy(p, y, reduction="mean"):
+    p = p.clamp(1e-12, 1.0)
+    q = (1 - p).clamp(1e-12, 1.0)
+    return _red(-(y * p.log() + (1 - y) * q.log()), reduction)
+def binary_cross_entropy_with_logits(z, y, reduction="mean"):
+    return _red(z.relu() - z * y + (1 + (-z.abs()).exp()).log(), reduction)
+
+
+class MSELoss(Module):
+    def __init__(self, reduction="mean"):
+        super().__init__()
+        self.r = reduction
+    def forward(self, p, y): return mse_loss(p, y, self.r)
+class L1Loss(MSELoss):
+    def forward(self, p, y): return l1_loss(p, y, self.r)
+class CrossEntropyLoss(MSELoss):
+    def forward(self, z, y): return cross_entropy(z, y, self.r)
+class BCELoss(MSELoss):
+    def forward(self, p, y): return binary_cross_entropy(p, y, self.r)
+class BCEWithLogitsLoss(MSELoss):
+    def forward(self, z, y): return binary_cross_entropy_with_logits(z, y, self.r)
+
+
+def dropout(x, p=0.5, training=True):
+    d = Dropout(p)
+    d.training = training
+    return d(x)
+
+
+def clip_grad_norm_(params, max_norm):
+    ps = [p for p in params if p._g is not None]
+    total = math.sqrt(builtins.sum(float((p._g.astype(np.float64) ** 2).sum()) for p in ps))
+    if total > max_norm:
+        for p in ps:
+            p._g = p._g * (max_norm / (total + 1e-6))
+    return Tensor(np.array(total, dtype=np.float32))
+
+
+# ---------- optim ----------
+class Optimizer:
+    def __init__(self, params, lr):
+        self.param_groups = [{"params": list(params), "lr": lr}]
+        self.state = {}
+
+    def zero_grad(self, set_to_none=True):
+        for g in self.param_groups:
+            for p in g["params"]:
+                p._g = None
+
+
+class SGD(Optimizer):
+    def __init__(self, params, lr=0.01, momentum=0.0, weight_decay=0.0):
+        super().__init__(params, lr)
+        self.m, self.wd = momentum, weight_decay
+
+    def step(self):
+        for g in self.param_groups:
+            for p in g["params"]:
+                if p._g is None:
+                    continue
+                d = p._g + self.wd * p._a if self.wd else p._g
+                if self.m:
+                    b = self.state.get(id(p))
+                    b = d.copy() if b is None else self.m * b + d
+                    self.state[id(p)] = b
+                    d = b
+                p._a -= (g["lr"] * d).astype(p._a.dtype)
+
+
+class Adam(Optimizer):
+    def __init__(self, params, lr=0.001, betas=(0.9, 0.999), eps=1e-8, weight_decay=0.0):
+        super().__init__(params, lr)
+        self.b, self.eps, self.wd, self.t = betas, eps, weight_decay, 0
+
+    def step(self):
+        self.t += 1
+        for g in self.param_groups:
+            for p in g["params"]:
+                if p._g is None:
+                    continue
+                d = p._g + self.wd * p._a if self.wd else p._g
+                m, v = self.state.get(id(p), (np.zeros_like(p._a), np.zeros_like(p._a)))
+                m = self.b[0] * m + (1 - self.b[0]) * d
+                v = self.b[1] * v + (1 - self.b[1]) * d * d
+                self.state[id(p)] = (m, v)
+                mh, vh = m / (1 - self.b[0] ** self.t), v / (1 - self.b[1] ** self.t)
+                p._a -= (g["lr"] * mh / (np.sqrt(vh) + self.eps)).astype(p._a.dtype)
+
+
+# ---------- utils.data ----------
+class Dataset:
+    pass
+
+
+class TensorDataset(Dataset):
+    def __init__(self, *ts):
+        self.ts = ts
+
+    def __len__(self):
+        return len(self.ts[0])
+
+    def __getitem__(self, i):
+        return tuple(t[i] for t in self.ts)
+
+
+class DataLoader:
+    def __init__(self, dataset, batch_size=1, shuffle=False, drop_last=False):
+        self.ds, self.bs, self.sh, self.dl = dataset, batch_size, shuffle, drop_last
+
+    def __len__(self):
+        n = len(self.ds)
+        return n // self.bs if self.dl else -(-n // self.bs)
+
+    def __iter__(self):
+        n = len(self.ds)
+        idx = _st["rng"].permutation(n) if self.sh else np.arange(n)
+        for s in range(0, n, self.bs):
+            part = idx[s:s + self.bs]
+            if self.dl and len(part) < self.bs:
+                break
+            items = [self.ds[int(i)] for i in part]
+            if isinstance(items[0], tuple):
+                yield [stack([it[k] for it in items]) for k in range(len(items[0]))]
+            else:
+                yield stack(items)
+
+
+class Subset(Dataset):
+    def __init__(self, ds, idx):
+        self.ds, self.idx = ds, list(idx)
+
+    def __len__(self):
+        return len(self.idx)
+
+    def __getitem__(self, i):
+        return self.ds[self.idx[i]]
+
+
+def random_split(ds, lengths):
+    perm = _st["rng"].permutation(len(ds))
+    out, s = [], 0
+    for n in lengths:
+        out.append(Subset(ds, perm[s:s + n]))
+        s += n
+    return out
+
+
+def _install(ns):
+    def mod(name, names, **extra):
+        m = types.ModuleType(name)
+        for n in names:
+            setattr(m, n, ns[n])
+        for k, v in extra.items():
+            setattr(m, k, v)
+        sys.modules[name] = m
+        return m
+    torch = mod("torch", ["Tensor", "tensor", "from_numpy", "zeros", "ones", "full", "zeros_like", "ones_like", "eye", "arange", "linspace", "manual_seed", "rand", "randn", "randint", "randperm", "is_tensor", "cat", "stack", "where", "allclose", "equal", "matmul", "exp", "log", "sqrt", "abs", "relu", "sigmoid", "tanh", "sum", "mean", "argmax", "clamp", "softmax", "log_softmax", "no_grad", "enable_grad", "set_grad_enabled", "is_grad_enabled", "device", "cuda", "save", "load", "float32", "float64", "int64", "int32"], float=ns["float32"], double=ns["float64"], long=ns["int64"], int=ns["int32"], bool=ns["bool_"], __version__="stand-in (NumPy)")
+    F = mod("torch.nn.functional", ["relu", "sigmoid", "tanh", "softmax", "log_softmax", "mse_loss", "l1_loss", "cross_entropy", "binary_cross_entropy", "binary_cross_entropy_with_logits", "dropout"])
+    utils_mod = mod("torch.nn.utils", ["clip_grad_norm_"])
+    nn = mod("torch.nn", ["Module", "Parameter", "Linear", "ReLU", "Sigmoid", "Tanh", "Softmax", "Dropout", "Identity", "Flatten", "Sequential", "MSELoss", "L1Loss", "CrossEntropyLoss", "BCELoss", "BCEWithLogitsLoss"], functional=F, utils=utils_mod)
+    optim = mod("torch.optim", ["SGD", "Adam"])
+    data = mod("torch.utils.data", ["Dataset", "TensorDataset", "DataLoader", "Subset", "random_split"])
+    tu = mod("torch.utils", [], data=data)
+    torch.nn, torch.optim, torch.utils = nn, optim, tu
+    torch.Tensor = ns["Tensor"]
+    return torch
+
+
+_install(globals())
