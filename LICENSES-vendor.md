@@ -1,6 +1,6 @@
-# Third-party software shipped with DS Quest
+# Third-party software shipped with Dhruv Patel Academy
 
-DS Quest bundles the following open-source components under `public/vendor/` so the app works offline. Each keeps its own licence; the licence text for every Python
+Dhruv Patel Academy bundles the following open-source components under `public/vendor/` so the app works offline. Each keeps its own licence; the licence text for every Python
 package is inside its wheel (`*.dist-info/`). This list is a convenience, not legal advice. Re-check it whenever `tools/fetch_offline.js` is run.
 
 | component | where | licence |
@@ -14,4 +14,4 @@ package is inside its wheel (`*.dist-info/`). This list is a convenience, not le
 | html2canvas 1.4.1 | `vendor/html2canvas.min.js` | MIT |
 | Inter, Source Serif 4, JetBrains Mono (latin subsets) | `vendor/fonts/` | SIL Open Font License 1.1 |
 
-Course text, exercises, diagrams and code written for DS Quest are the project owner's own work. Trademarks (Python, NumPy, PyTorch, Kubernetes, ...) belong to their owners and are used only to name the technology.
+Course text, exercises, diagrams and code written for Dhruv Patel Academy are the project owner's own work. Trademarks (Python, NumPy, PyTorch, Kubernetes, ...) belong to their owners and are used only to name the technology.

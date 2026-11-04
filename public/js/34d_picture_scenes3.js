@@ -91,10 +91,10 @@ PIC.scenes.trace = (stage, sp, ctx) => {
    spec: { pts, test, xr, yr, xt, yt, line: [w, b], lr, steps, deg, xlab, ylab, cap }
    --------------------------------------------------------------------------------------------- */
 PIC.scenes.regress = (stage, sp, ctx) => {
-  const W = 560, H = 330, xr = sp.xr || [0, 10], yr = sp.yr || [0, 10], F = pc3.frame(W, H, 46, 14, 14, 36, xr, yr, { xt: sp.xt, yt: sp.yt }), sx = F.sx, sy = F.sy, pts = sp.pts, test = sp.test || [], mode = sp.mode || 'guess', M = PIC.math;
+  const W = 560, H = 330, xr = sp.xr || [0, 10], yr = sp.yr || [0, 10], F = pc3.frame(W, H, 46, 14, 14, 36, xr, yr, { xt: sp.xt, yt: sp.yt }), sx = F.sx, sy = F.sy, pts = sp.pts.map(p => p.slice()), test = sp.test || [], mode = sp.mode || 'guess', M = PIC.math; let livePaint = null;
   stage.innerHTML = `<svg viewBox="0 0 ${W} ${H}" class="pc-svg" role="img" aria-label="${picEsc(sp.title || 'a line fitted to points')}"><defs><clipPath id="pc3clip"><rect x="46" y="14" width="${W - 60}" height="${H - 50}"/></clipPath></defs>${F.svg}${pc3.labels(W, H, sp.xlab || 'x', sp.ylab || 'y')}<g class="rg-sq" clip-path="url(#pc3clip)"></g><g class="rg-res"></g><path class="rg-curve" fill="none" clip-path="url(#pc3clip)"/><line class="rg-line" style="display:none" clip-path="url(#pc3clip)"/><g class="rg-pts"></g></svg>${mode === 'learn' ? '<svg viewBox="0 0 560 84" class="pc-svg pc3-mini" role="img" aria-label="the error falling as the line learns"><text x="8" y="14" class="pc-t">error (MSE, log scale)</text><path class="rg-loss" fill="none"/></svg>' : ''}${pc3.tail(sp)}`;
   const line = stage.querySelector('.rg-line'), res = stage.querySelector('.rg-res'), sq = stage.querySelector('.rg-sq'), curve = stage.querySelector('.rg-curve'), note = stage.querySelector('.pc-formula'), replay = stage.querySelector('.pc-replay'), lossP = stage.querySelector('.rg-loss'), NS = 'http://www.w3.org/2000/svg';
-  stage.querySelector('.rg-pts').innerHTML = pts.map(p => `<circle cx="${sx(p[0])}" cy="${sy(p[1])}" r="5.5" class="rg-p"><title>x = ${p[0]}, y = ${p[1]}</title></circle>`).join('') + test.map(p => `<circle cx="${sx(p[0])}" cy="${sy(p[1])}" r="5.5" class="rg-t"><title>new point: x = ${p[0]}, y = ${p[1]}</title></circle>`).join('');
+  stage.querySelector('.rg-pts').innerHTML = pts.map((p, i) => `<circle cx="${sx(p[0])}" cy="${sy(p[1])}" r="5.5" class="rg-p" data-i="${i}"><title>x = ${p[0]}, y = ${p[1]}</title></circle>`).join('') + test.map(p => `<circle cx="${sx(p[0])}" cy="${sy(p[1])}" r="5.5" class="rg-t"><title>new point: x = ${p[0]}, y = ${p[1]}</title></circle>`).join('');
   const setLine = (w, b, k) => { const x2 = xr[0] + (xr[1] - xr[0]) * (k == null ? 1 : k); line.style.display = ''; line.setAttribute('x1', sx(xr[0])); line.setAttribute('y1', sy(w * xr[0] + b)); line.setAttribute('x2', sx(x2)); line.setAttribute('y2', sy(w * x2 + b)); line.setAttribute('class', 'rg-line'); };
   const fmt = v => pc3.f(Math.round(v * 100) / 100);
   const go = () => {
@@ -131,7 +131,23 @@ PIC.scenes.regress = (stage, sp, ctx) => {
       if (mode === 'squares') pts.forEach(p => { const r = Math.abs(sy(w * p[0] + b) - sy(p[1])), q = document.createElementNS(NS, 'rect'); q.setAttribute('class', 'rg-sqr'); q.setAttribute('x', sx(p[0])); q.setAttribute('y', Math.min(sy(p[1]), sy(w * p[0] + b))); q.setAttribute('width', r); q.setAttribute('height', r); sq.appendChild(q); });
       note.innerHTML = `line: y = <b>${fmt(w)}</b>&middot;x + <b>${fmt(b)}</b> &nbsp; mean squared mistake (MSE) = <b>${M.mse(pts, w, b).toFixed(2)}</b>`; replay.hidden = false;
     };
-    tw.oninput = tb.oninput = () => paint(+tw.value, +tb.value); row.querySelector('.tz').onclick = () => { tw.value = w0; tb.value = b0; go(); };
+    tw.oninput = tb.oninput = () => paint(+tw.value, +tb.value); row.querySelector('.tz').onclick = () => { tw.value = w0; tb.value = b0; go(); }; livePaint = () => paint(+tw.value, +tb.value);
+  }
+  /* live data: drag a dot and the mistakes, the squares and the best-fit line follow */
+  {
+    const svg = stage.querySelector('svg'), ptsG = stage.querySelector('.rg-pts'), best = document.createElementNS(NS, 'line'), orig = pts.map(p => p.slice()), row2 = document.createElement('div');
+    best.setAttribute('class', 'rg-best'); best.setAttribute('clip-path', 'url(#pc3clip)'); ptsG.parentNode.insertBefore(best, ptsG);
+    row2.className = 'pc3-try'; row2.innerHTML = '<b>Drag the dots</b> and everything follows.' + (mode === 'poly' ? '' : ' <label><input type="checkbox" class="lv-b" checked> dashed line = the best straight line for these dots</label>') + ' <button type="button" class="btn sm lv-r">&#8634; put the dots back</button>'; stage.appendChild(row2);
+    const chkB = row2.querySelector('.lv-b'), lineY = () => { if (pts.length < 2 || new Set(pts.map(p => p[0])).size < 2) return null; const f = M.polyfit(pts.map(p => p[0]), pts.map(p => p[1]), 1); return [f(xr[0]), f(xr[1])]; };
+    let glide = null;
+    const drawBest = v => { best.setAttribute('x1', sx(xr[0])); best.setAttribute('x2', sx(xr[1])); best.setAttribute('y1', sy(v[0])); best.setAttribute('y2', sy(v[1])); };
+    const retarget = () => { const t = chkB && chkB.checked ? lineY() : null; best.style.display = t ? '' : 'none'; if (!t) return; if (!glide) glide = pc3Live.glide(stage, t, t, drawBest, (yr[1] - yr[0]) * 1e-3, .3); else glide.to(t); };
+    const polyNow = () => { const f = M.polyfit(pts.map(p => p[0]), pts.map(p => p[1]), sp.deg), xs = []; for (let i = 0; i <= 160; i++) xs.push(xr[0] + (xr[1] - xr[0]) * i / 160); curve.style.strokeDasharray = 'none'; curve.style.strokeDashoffset = 0; curve.setAttribute('d', xs.map((x, i) => (i ? 'L' : 'M') + sx(x) + ' ' + sy(Math.max(yr[0] - 5, Math.min(yr[1] + 5, f(x))))).join('')); note.innerHTML = `degree <b>${sp.deg}</b>: error on the dots it learned from = <b>${M.mean(pts.map(p => Math.pow(f(p[0]) - p[1], 2))).toFixed(4)}</b>`; };
+    const place = i => { const c = ptsG.querySelector(`.rg-p[data-i="${i}"]`); c.setAttribute('cx', sx(pts[i][0])); c.setAttribute('cy', sy(pts[i][1])); c.querySelector('title').textContent = `x = ${pts[i][0]}, y = ${pts[i][1]}`; };
+    const after = drop => { if (mode === 'poly') polyNow(); else if (livePaint) livePaint(); else if (mode === 'learn' && drop) { ctx.cancel(); go(); } retarget(); };
+    pc3Live.drag(svg, W, H, xr, yr, '.rg-p', (i, x, y, phase) => { pts[i][0] = x; pts[i][1] = y; place(i); after(phase === 'drop'); });
+    if (chkB) chkB.onchange = retarget; row2.querySelector('.lv-r').onclick = () => { pts.forEach((p, i) => { p[0] = orig[i][0]; p[1] = orig[i][1]; place(i); }); after(true); };
+    retarget();
   }
 };
 
@@ -139,7 +155,7 @@ PIC.scenes.regress = (stage, sp, ctx) => {
    Scene: cluster (k-means). spec: { pts, init, rounds, xr, yr, xlab, ylab, cap }
    --------------------------------------------------------------------------------------------- */
 PIC.scenes.cluster = (stage, sp, ctx) => {
-  const W = 560, H = 330, xr = sp.xr, yr = sp.yr, F = pc3.frame(W, H, 46, 14, 14, 36, xr, yr, { xt: sp.xt, yt: sp.yt }), sx = F.sx, sy = F.sy, pts = sp.pts, M = PIC.math, rounds = sp.rounds == null ? 99 : sp.rounds; sp = Object.assign({}, sp, sp.init ? { init: sp.init.map(c => c.slice()) } : {}); let km = sp.init ? M.kmeans(pts, sp.init, 30) : null;
+  const W = 560, H = 330, xr = sp.xr, yr = sp.yr, F = pc3.frame(W, H, 46, 14, 14, 36, xr, yr, { xt: sp.xt, yt: sp.yt }), sx = F.sx, sy = F.sy, pts = sp.pts.map(p => p.slice()), M = PIC.math, rounds = sp.rounds == null ? 99 : sp.rounds; sp = Object.assign({}, sp, sp.init ? { init: sp.init.map(c => c.slice()) } : {}); let km = sp.init ? M.kmeans(pts, sp.init, 30) : null;
   stage.innerHTML = `<svg viewBox="0 0 ${W} ${H}" class="pc-svg" role="img" aria-label="${picEsc(sp.title || 'points grouped around centres')}">${F.svg}${pc3.labels(W, H, sp.xlab, sp.ylab)}<g class="cl-trail"></g><g class="cl-pts">${pts.map((p, i) => `<circle class="cl-p" data-i="${i}" cx="${sx(p[0])}" cy="${sy(p[1])}" r="6"/>`).join('')}</g><g class="cl-cent"></g></svg>${pc3.tail(sp)}`;
   const dots = [...stage.querySelectorAll('.cl-p')], cg = stage.querySelector('.cl-cent'), tg = stage.querySelector('.cl-trail'), note = stage.querySelector('.pc-formula'), replay = stage.querySelector('.pc-replay'), NS = 'http://www.w3.org/2000/svg';
   const star = (c, k) => `<g class="cl-c" transform="translate(${sx(c[0])},${sy(c[1])})"><path d="M0 -13 L11 0 L0 13 L-11 0 Z" fill="${pc3.col[k]}" stroke="#fff" stroke-width="2.5"/><circle r="2.5" fill="#fff"/></g>`;
@@ -162,6 +178,8 @@ PIC.scenes.cluster = (stage, sp, ctx) => {
   };
   replay.onclick = go; go();
   if (km) { const hint = document.createElement('div'); hint.className = 'pc3-try'; hint.innerHTML = '<b>Move a starting centre</b> click anywhere on the picture: the nearest diamond jumps there and k-means starts again'; stage.appendChild(hint); const svg = stage.querySelector('svg'); svg.style.cursor = 'crosshair'; svg.addEventListener('click', e => { const r = svg.getBoundingClientRect(), vx = (e.clientX - r.left) / r.width * W, vy = (e.clientY - r.top) / r.height * H, x = xr[0] + (vx - 46) / (W - 60) * (xr[1] - xr[0]), y = yr[0] + (H - 36 - vy) / (H - 50) * (yr[1] - yr[0]); if (x < xr[0] || x > xr[1] || y < yr[0] || y > yr[1]) return; let k = 0, bd = 1e18; sp.init.forEach((c, i) => { const d = (c[0] - x) * (c[0] - x) + (c[1] - y) * (c[1] - y); if (d < bd) { bd = d; k = i; } }); sp.init = sp.init.map((c, i) => (i === k ? [x, y] : c)); km = M.kmeans(pts, sp.init, 30); ctx.cancel(); go(); }); }
+  /* live data: drag a dot; its colour follows the nearest starting centre at once, and k-means starts again when you let go */
+  { const svg = stage.querySelector('svg'); pc3Live.drag(svg, W, H, xr, yr, '.cl-p', (i, x, y, phase) => { pts[i][0] = x; pts[i][1] = y; dots[i].setAttribute('cx', sx(x)); dots[i].setAttribute('cy', sy(y)); if (!km) return; if (phase === 'drop') { km = M.kmeans(pts, sp.init, 30); ctx.cancel(); go(); return; } let k = 0, bd = 1e18; sp.init.forEach((c, j) => { const d = (c[0] - x) * (c[0] - x) + (c[1] - y) * (c[1] - y); if (d < bd) { bd = d; k = j; } }); dots[i].style.fill = pc3.col[k]; dots[i].classList.remove('free'); }); if (!km) { const hint = document.createElement('div'); hint.className = 'pc3-try'; hint.innerHTML = '<b>Drag the dots</b> to change the data.'; stage.appendChild(hint); } }
 };
 
 /* ---------------------------------------------------------------------------------------------

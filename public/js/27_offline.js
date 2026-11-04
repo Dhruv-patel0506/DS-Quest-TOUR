@@ -54,11 +54,11 @@ OFFLINE.auto = async () => {
     if (!OFFLINE.supported || !navigator.onLine || !OFFLINE.autoOn() || OFFLINE._running) return;
     const c = navigator.connection; if (c && (c.saveData || /^(slow-)?2g$/.test(c.effectiveType || ''))) return;
     const s = await OFFLINE.status(); if (s.have >= s.files) { OFFLINE._done = true; return; }
-    OFFLINE._running = true; const chip = h('div', { class: 'off-chip', role: 'status', title: 'DS Quest is saving itself for offline use. Turn this off in Offline mode.' }, 'Saving for offline use… 0%'); document.body.append(chip);
+    OFFLINE._running = true; const chip = h('div', { class: 'off-chip', role: 'status', title: 'Dhruv Patel Academy is saving itself for offline use. Turn this off in Offline mode.' }, 'Saving for offline use… 0%'); document.body.append(chip);
     const ctl = new AbortController(); OFFLINE._ctl = ctl;
     const r = await OFFLINE.download((d, t) => { chip.textContent = 'Saving for offline use… ' + Math.round(100 * d / t) + '%'; }, ctl.signal).catch(e => ({ fail: 1 }));
     OFFLINE._running = false; chip.remove();
-    if (!r.aborted && !r.fail) { OFFLINE._done = true; if (typeof toast === 'function') toast('Saved. DS Quest now works with no internet on this device.'); }
+    if (!r.aborted && !r.fail) { OFFLINE._done = true; if (typeof toast === 'function') toast('Saved. Dhruv Patel Academy now works with no internet on this device.'); }
   } catch (e) { OFFLINE._running = false; }
 };
 setTimeout(() => (window.requestIdleCallback ? requestIdleCallback(() => OFFLINE.auto(), { timeout: 8000 }) : OFFLINE.auto()), 5000);
@@ -77,7 +77,7 @@ function viewOffline() {
   const dl = h('button', { class: 'btn primary', type: 'button' }, 'Make available offline'), stop = h('button', { class: 'btn', type: 'button', style: { display: 'none' } }, 'Stop');
   const rm = h('button', { class: 'btn', type: 'button' }, 'Remove the offline Python copy'), inst = h('button', { class: 'btn', type: 'button', style: { display: 'none' } }, 'Install as an app');
   async function paint() {
-    if (!OFFLINE.supported) { stats.replaceChildren(h('p', {}, 'This browser (or this way of opening the page) cannot keep files for offline use. Open DS Quest from its web address in a current Chrome, Edge, Firefox or Safari.')); dl.disabled = rm.disabled = true; return; }
+    if (!OFFLINE.supported) { stats.replaceChildren(h('p', {}, 'This browser (or this way of opening the page) cannot keep files for offline use. Open Dhruv Patel Academy from its web address in a current Chrome, Edge, Firefox or Safari.')); dl.disabled = rm.disabled = true; return; }
     try {
       const s = await OFFLINE.status(), full = s.have === s.files, ctrl = !!navigator.serviceWorker.controller;
       stats.replaceChildren(
@@ -94,7 +94,7 @@ function viewOffline() {
     if (ctl) return; ctl = new AbortController(); dl.disabled = true; stop.style.display = ''; prog.style.display = ''; msg.textContent = 'Downloading the Python engine...';
     const r = await OFFLINE.download((d, t, f) => { bar.style.width = Math.round(100 * d / t) + '%'; msg.textContent = OFFLINE.mb(d) + ' of ' + OFFLINE.mb(t) + (f ? ' (' + f + ' file(s) failed, will retry next time)' : ''); }, ctl.signal).catch(e => ({ fail: 1, err: e }));
     ctl = null; dl.disabled = false; stop.style.display = 'none';
-    msg.textContent = r.aborted ? 'Stopped. Press the button again to continue where it left off.' : r.fail ? 'Some files could not be downloaded. Check the connection and press the button again.' : 'Done. DS Quest now works without internet on this device.';
+    msg.textContent = r.aborted ? 'Stopped. Press the button again to continue where it left off.' : r.fail ? 'Some files could not be downloaded. Check the connection and press the button again.' : 'Done. Dhruv Patel Academy now works without internet on this device.';
     paint();
   };
   stop.onclick = () => ctl && ctl.abort();
@@ -102,7 +102,7 @@ function viewOffline() {
   inst.onclick = async () => { await OFFLINE.install(); paint(); };
   const auto = h('label', { class: 'row', style: { gap: '6px', fontSize: '13px' } }, h('input', { type: 'checkbox', checked: OFFLINE.autoOn(), onchange: e => { localStorage.setItem('dsq.offlineAuto', e.target.checked ? 'on' : 'off'); if (e.target.checked) OFFLINE.auto(); else if (OFFLINE._ctl) OFFLINE._ctl.abort(); } }), 'Save everything automatically in the background (recommended)');
   body.append(stats, h('div', { class: 'row', style: { gap: '8px', flexWrap: 'wrap' } }, dl, stop, inst, rm), auto, prog, msg);
-  root.append(h('div', { class: 'page-h' }, h('div', {}, h('div', { class: 'eyebrow' }, 'Account'), h('h1', {}, 'Offline mode'), h('p', { class: 'muted lead' }, 'Use DS Quest on a plane, on a bad connection or with no Wi-Fi at all. Nothing is sent anywhere: the Python engine runs inside your browser.'))), body,
+  root.append(h('div', { class: 'page-h' }, h('div', {}, h('div', { class: 'eyebrow' }, 'Account'), h('h1', {}, 'Offline mode'), h('p', { class: 'muted lead' }, 'Use Dhruv Patel Academy on a plane, on a bad connection or with no Wi-Fi at all. Nothing is sent anywhere: the Python engine runs inside your browser.'))), body,
     h('div', { class: 'card pad stack' }, h('h3', {}, 'What works with no internet'),
       h('ul', {}, h('li', {}, 'All lessons, diagrams, 3-D views and algorithm animations.'), h('li', {}, 'Every code exercise and the in-browser notebook (numpy, pandas, matplotlib, scikit-learn, scipy, seaborn, FastAPI and Django lessons).'), h('li', {}, 'Practice notebooks you download to run in your own Jupyter.'), h('li', {}, 'Your progress, saved in this browser.')),
       h('h3', {}, 'What needs the internet'), h('ul', {}, h('li', {}, 'Loading a dataset from a web address, LinkedIn sharing, the AI tutor and pushing projects to Git.'), h('li', {}, 'Moving your progress to another device (progress lives in this browser; use another device with the same browser profile or export your work).'))));

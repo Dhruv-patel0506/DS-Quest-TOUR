@@ -1,5 +1,5 @@
 'use strict';
-/* Downloads everything DS Quest needs to run with NO internet into public/vendor/ :
+/* Downloads everything Dhruv Patel Academy needs to run with NO internet into public/vendor/ :
      vendor/pyodide/       Pyodide core + every package the lessons import (resolved from pyodide-lock.json)
      vendor/wheels/        pure-python wheels that pip would normally fetch (seaborn, fastapi, django ...)
      vendor/fonts/         Inter, Source Serif 4, JetBrains Mono (latin) + fonts.css

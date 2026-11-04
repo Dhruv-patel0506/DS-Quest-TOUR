@@ -111,26 +111,46 @@ function initAsk() {
   function setCount() { const n = marker.shapes.length + sketch.shapes.length, sel = String(getSelection() || '').trim().length; count.textContent = n || sel ? `${marker.shapes.length} marks on page, ${sketch.shapes.length} in sketch${sel ? ', text selected' : ''}` : 'nothing marked'; }
   function toggle(on) { Ask.open = on === undefined ? !Ask.open : on; dock.hidden = !Ask.open; fab.hidden = Ask.open; document.body.classList.toggle('askopen', Ask.open); if (!Ask.open) { pick(null); } if (Ask.open) refreshStatus(); setCount(); }
   fab.addEventListener('click', () => toggle(true)); document.addEventListener('keydown', e => { if (e.key === 'Escape' && Ask.open) { e.preventDefault(); toggle(false); } }); document.addEventListener('selectionchange', () => { if (Ask.open) setCount(); }); addEventListener('resize', resize); addEventListener('scroll', () => marker.draw(), { passive: true }); resize();
-  async function refreshStatus() { try { Ask.status = await API.get('/api/llm/status'); const ok = Ask.status.providers.filter(p => p.ok && !p.disabled); prov.className = 'chip ' + (ok.length ? 'ok' : 'warn'); prov.textContent = ok.length ? 'AI: ' + ok.map(p => p.id).join(' > ') + (ok.some(p => p.vision) ? ' (sees images)' : ' (text only)') : 'AI: none reachable (offline help only)'; prov.title = Ask.status.providers.map(p => `${p.id}: ${p.ok ? 'ready' : 'not ready'} - ${p.detail}`).join('\n'); } catch (e) { prov.textContent = 'AI: unknown'; } }
-  async function ask(text) {
-    text = String(text || '').trim(); if (!text || Ask.busy) { if (!text) toast('Type a question first (or press a chip).'); return; } Ask.busy = true; send.disabled = true;
-    const turn = h('div', { class: 'turn' }, h('div', { class: 'qbub' }, text), h('div', { class: 'muted' }, 'Thinking...')); ans.prepend(turn);
-    const ctx = gatherContext(marker, sketch); const canSee = Ask.status && Ask.status.providers.some(p => p.ok && p.vision && !p.disabled);
-    let image = null; if (withShot.checked && canSee && (marker.shapes.length || sketch.shapes.length)) { if (mode === 'sketch' && sketch.shapes.length) image = sketchCv.toDataURL('image/png'); else image = await capture(marker); }
+  async function refreshStatus() { try { Ask.status = await API.get('/api/llm/status'); const ok = Ask.status.providers.filter(p => p.ok && !p.disabled); prov.className = 'chip ' + (ok.length ? 'ok' : 'warn'); prov.textContent = ok.length ? 'AI: ' + ok.map(p => p.id).join(' > ') + (ok.some(p => p.vision) ? ' (sees images)' : ' (text only)') : 'AI: none reachable (offline help only)'; prov.title = Ask.status.providers.map(p => `${p.id}: ${p.ok ? 'ready' : 'not ready'} - ${p.detail}`).join('\n'); } catch (e) { prov.className = 'chip warn'; prov.textContent = navigator.onLine === false || !e.status ? 'AI: offline (questions are saved and sent later)' : 'AI: unknown'; } }
+  /* Questions asked with no connection are kept on this device and sent by themselves when the connection is back (even days later). */
+  const QK = 'dsq.askq', qload = () => { try { return JSON.parse(localStorage.getItem(QK) || '[]'); } catch (e) { return []; } }, qsave = a => { try { localStorage.setItem(QK, JSON.stringify(a.slice(-10))); } catch (e) { } };
+  const slim = c => { const o = {}; for (const k in c) o[k] = typeof c[k] === 'string' ? c[k].slice(0, 2000) : c[k]; return o; };
+  let pending = null;
+  async function drain() {
+    if (Ask.draining || navigator.onLine === false) return; const q0 = qload(); if (!q0.length) return; Ask.draining = true;
+    try { while (qload().length && navigator.onLine !== false) { const it = qload()[0]; const ok = await ask(it.q, { ctx: it.ctx, old: pending && pending.get(it.t) }); if (!ok) break; qsave(qload().slice(1)); } } finally { Ask.draining = false; refreshStatus(); }
+  }
+  async function ask(text, again) {
+    text = String(text || '').trim(); if (!text || (Ask.busy && !again)) { if (!text) toast('Type a question first (or press a chip).'); return false; } Ask.busy = true; send.disabled = true;
+    if (again && again.old && again.old.isConnected) again.old.remove();
+    const turn = h('div', { class: 'turn' }, h('div', { class: 'qbub' }, text), h('div', { class: 'muted' }, again ? 'Back online. Asking now...' : 'Thinking...')); ans.prepend(turn);
+    const ctx = again ? again.ctx : gatherContext(marker, sketch); const canSee = Ask.status && Ask.status.providers.some(p => p.ok && p.vision && !p.disabled);
+    let image = null; if (!again && withShot.checked && canSee && (marker.shapes.length || sketch.shapes.length)) { if (mode === 'sketch' && sketch.shapes.length) image = sketchCv.toDataURL('image/png'); else image = await capture(marker); }
+    let delivered = true;
     try {
       const r = await API.post('/api/llm/ask', { question: text, context: ctx, image, history: Ask.hist });
       turn.lastChild.remove();
       if (r.available) {
-        turn.append(renderAnswer(r.answer), h('div', { class: 'muted', style: { fontSize: '12px' } }, `answered by ${r.provider} (${r.model})` + (r.sawImage ? ' - it saw your screenshot' : image ? ' - screenshot not used by this model; your marks were sent as text' : '') + (r.trail.length > 1 ? ' - fallback trail: ' + r.trail.map(t => t.id + (t.ok ? ' ok' : ' x')).join(' > ') : '')));
-        Ask.hist.push({ role: 'user', content: text }, { role: 'assistant', content: r.answer.slice(0, 800) }); DSQ.S.log({ type: 'ask' }); DSQ.S.award(2, 'Curiosity'); Ask.hist = Ask.hist.slice(-8);
+        turn.append(renderAnswer(r.answer), h('div', { class: 'muted', style: { fontSize: '12px' } }, `answered by ${r.provider} (${r.model})` + (r.cached ? ' - saved answer' : '') + (r.sawImage ? ' - it saw your screenshot' : image ? ' - screenshot not used by this model; your marks were sent as text' : '') + ((r.trail || []).length > 1 ? ' - fallback trail: ' + r.trail.map(t => t.id + (t.ok ? ' ok' : ' x')).join(' > ') : '')));
+        DSQ.HIST && DSQ.HIST.add('tutor', (location.hash || '').slice(0, 80), { q: text, a: r.answer, provider: r.provider, model: r.model }, 'q'); Ask.hist.push({ role: 'user', content: text }, { role: 'assistant', content: r.answer.slice(0, 800) }); DSQ.S.log({ type: 'ask' }); DSQ.S.award(2, 'Curiosity'); Ask.hist = Ask.hist.slice(-8);
       } else {
         turn.append(h('div', { class: 'callout warn' }, h('b', {}, 'No AI model answered. '), r.hint || '', h('details', {}, h('summary', {}, 'what was tried'), h('pre', { class: 'tout' }, (r.trail || []).map(t => `${t.id}: ${t.ok ? 'ok' : t.err}`).join('\n')))));
         const lines = (ctx.marked || '').match(/CODE LINES[^\n]*\n[\s\S]*?(?=\nON SCREEN|\nCODE LINES|$)/g) || [];
         if (lines.length) turn.append(h('div', { class: 'callout' }, h('b', {}, 'Offline help for the code you marked: '), h('ul', {}, lines.flatMap(b => b.split('\n').slice(1)).filter(l => l.trim()).slice(0, 6).map(l => h('li', { html: '<code>' + esc(l.trim()) + '</code> - ' + explainLine(l) })))));
       }
-    } catch (e) { turn.lastChild && turn.lastChild.remove(); turn.append(h('div', { class: 'callout warn' }, 'Could not reach the tutor service: ' + e.message)); }
-    Ask.busy = false; send.disabled = false; q.value = '';
+    } catch (e) {
+      turn.lastChild && turn.lastChild.remove();
+      if (!e.status) {
+        delivered = false;
+        if (!again) { const t = Date.now(); qsave(qload().concat([{ q: text, ctx: slim(ctx), t }])); (pending = pending || new Map()).set(t, turn); }
+        turn.append(h('div', { class: 'callout' }, h('b', {}, 'You are offline. '), 'Your question is saved on this device and goes to the tutor by itself as soon as you are back online, even after a long time. The built-in explanations work meanwhile.'));
+        const lines = (ctx.marked || '').match(/CODE LINES[^\n]*\n[\s\S]*?(?=\nON SCREEN|\nCODE LINES|$)/g) || [];
+        if (lines.length && !again) turn.append(h('div', { class: 'callout' }, h('b', {}, 'Offline help for the code you marked: '), h('ul', {}, lines.flatMap(b => b.split('\n').slice(1)).filter(l => l.trim()).slice(0, 6).map(l => h('li', { html: '<code>' + esc(l.trim()) + '</code> - ' + explainLine(l) })))));
+      } else turn.append(h('div', { class: 'callout warn' }, 'Could not reach the tutor service: ' + e.message));
+    }
+    Ask.busy = false; send.disabled = false; if (!again) q.value = ''; return delivered;
   }
+  addEventListener('online', () => { refreshStatus(); drain(); }); addEventListener('offline', () => refreshStatus()); setTimeout(drain, 4000);
   DSQ.ask = ask; DSQ.askToggle = toggle; DSQ.askStatus = refreshStatus; DSQ.marker = marker; DSQ.sketch = sketch;
 }
 DSQ.initAsk = initAsk;

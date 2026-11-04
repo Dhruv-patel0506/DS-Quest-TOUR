@@ -10,7 +10,7 @@ const rel = p => path.relative(PUB, p).split(path.sep).join('/');
 const SKIP = new Set(['sw.js', 'precache.json']);
 const isPack = r => /^vendor\/(pyodide|wheels)\//.test(r) || /^notebooks\/.+\.ipynb$/.test(r);
 const all = walk(PUB).map(p => ({ p, r: rel(p) })).filter(x => !SKIP.has(x.r)).sort((a, b) => a.r.localeCompare(b.r));
-const shell = all.filter(x => !isPack(x.r)), pack = all.filter(x => isPack(x.r) && !/\/files\.json$/.test(x.r));
+const shell = all.filter(x => !isPack(x.r) && !/^demo\/preview\//.test(x.r)), pack = all.filter(x => isPack(x.r) && !/\/files\.json$/.test(x.r));
 const hash = crypto.createHash('sha1');
 for (const x of shell) { hash.update(x.r); hash.update(fs.readFileSync(x.p)); }
 const version = hash.digest('hex').slice(0, 10);

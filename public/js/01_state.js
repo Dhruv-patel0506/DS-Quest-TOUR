@@ -1,6 +1,6 @@
 'use strict';
 /* =====================================================================
-   DS Quest - API client, learner state, pts / levels / streaks / badges
+   Dhruv Patel Academy - API client, learner state, pts / levels / streaks / badges
    ===================================================================== */
 const API = {
   local: false, cached: false,

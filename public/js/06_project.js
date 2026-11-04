@@ -127,13 +127,13 @@ function projectView(mod, o = {}) {
       try {
         const r = await API.post('/api/project/publish', { moduleId: mod.id, variantId: v.id, files: { 'solution.py': sol, [ds.path]: ds.csv }, images,
           meta: { title: v.title, module: mod.title, skills: [mod.title].concat((mod.syllabus || []).slice(0, 3)), pitch: v.pitch, dataset: v.dataset.file + ' (' + cp.n + ' rows)', edition: flag ? 'Flagship edition' : 'Standard edition', logic: approach.value, output: res.stdout, milestones: ms.map(x => x.title) } });
-        pr.published = true; pr.live = r.live; S.projects[mod.id + '-' + v.id] = { live: r.live }; S.badge('first-project'); S.award(flag ? 150 : 100, 'Project published'); confetti(220); S.save();
+        pr.published = true; pr.live = r.live; DSQ.HIST && DSQ.HIST.add('project', mod.id + '-' + v.id, { title: v.title, module: mod.title, live: r.live || '', final: true }, 'publish'); S.projects[mod.id + '-' + v.id] = { live: r.live }; S.badge('first-project'); S.award(flag ? 150 : 100, 'Project published'); confetti(220); S.save();
         const oldShip = $('.ship-wrap', fin); if (oldShip) oldShip.remove(); fin.append(h('div', { class: 'ship-wrap' }, shipCard()));
         msg.innerHTML = ''; msg.append(h('div', { class: 'callout ok' }, h('b', {}, r.live ? 'Your project is live. ' : 'Your project is saved in this browser. '), 'Git: ' + (r.git.committed ? 'committed ' + (r.git.commit || '') : 'not committed') + ' - ' + r.git.note + '. ', r.live ? [h('a', { href: r.live, target: '_blank', rel: 'noopener' }, 'Open the live page'), ' (also saved as README.md + solution.py in workspace/' + user.toLowerCase() + ').'] : null));
       } catch (e) { msg.innerHTML = '<div class="callout warn">Could not publish: ' + esc(e.message) + '</div>'; }
       btn.disabled = false;
     });
-    fin.append(h('div', { class: 'card pad stack' }, h('h3', { style: { font: '700 1.3rem var(--f-body)' } }, 'All milestones done - ship it'), h('p', { class: 'prose' }, 'Describe your approach, then publish. DS Quest runs your complete solution, saves the code, data, charts and a README into your own git repository, commits it, and opens a live page you can put on your resume.' + (flag ? ' (Flagship case-study page.)' : '')), approach, h('div', { class: 'row' }, btn), msg));
+    fin.append(h('div', { class: 'card pad stack' }, h('h3', { style: { font: '700 1.3rem var(--f-body)' } }, 'All milestones done - ship it'), h('p', { class: 'prose' }, 'Describe your approach, then publish. Dhruv Patel Academy runs your complete solution, saves the code, data, charts and a README into your own git repository, commits it, and opens a live page you can put on your resume.' + (flag ? ' (Flagship case-study page.)' : '')), approach, h('div', { class: 'row' }, btn), msg));
     if (pr.published) fin.append(h('div', { class: 'ship-wrap' }, shipCard()));
   }
   root.append(fin);

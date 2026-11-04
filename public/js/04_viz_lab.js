@@ -180,7 +180,7 @@ DSQ.viz.dataLab = (c, a) => {
         const r = await API.post('/api/llm/ask', { question: q, context: { page: 'Data Lab', vizOut: summary() } });
         if (r.available) { ans = r.answer; src = 'AI tutor (' + (r.provider || 'model') + ')'; }
         else { ans = gloss(q); src = 'built-in glossary'; if (!ans) ans = 'The tutor model could not be reached right now (' + (r.hint || 'no provider answered') + (r.trail ? ' - tried: ' + JSON.stringify(r.trail).slice(0, 200) : '') + '). I can still answer from your data: counts, means, max/min, correlation, outliers, clusters, the fitted line; and I know the terms TP/TN/FP/FN, precision, recall, determinant, gradient, overfitting. Check the AI chip in the Ask panel to see which providers are ready.'; }
-      } catch (e) { ans = gloss(q) || 'Could not reach the server (' + (e && e.message ? e.message : e) + '). Is the DS Quest server still running? Questions about your data (counts, means, outliers, line, clusters) still work offline.'; src = 'offline'; }
+      } catch (e) { ans = gloss(q) || 'Could not reach the server (' + (e && e.message ? e.message : e) + '). Is the Dhruv Patel Academy server still running? Questions about your data (counts, means, outliers, line, clusters) still work offline.'; src = 'offline'; }
     }
     c.say(`<span class="y">Q:</span> ${esc(q)}\n<span class="g">A (${esc(src)}):</span> ${esc(ans)}`);
   }

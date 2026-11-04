@@ -18,7 +18,7 @@ const modById = id => App.mods.find(m => m.id === id);
 function authFrame(inner) {
   dispose(); document.body.dataset.view = 'auth'; ['askfab', 'askdock', 'markcv'].forEach(id => { const e = document.getElementById(id); if (e) e.remove(); }); document.body.classList.remove('askopen');
   const chart = '<svg viewBox="0 0 320 200" role="img" aria-label="A bar chart with a rising line"><g fill="none" stroke="#12151C" stroke-width="2"><path d="M30 170H300M30 170V20"/></g><g><rect x="50" y="120" width="34" height="50" fill="#3B3CD6"/><rect x="100" y="95" width="34" height="75" fill="#7C3AED"/><rect x="150" y="70" width="34" height="100" fill="#3B3CD6"/><rect x="200" y="48" width="34" height="122" fill="#7C3AED"/><rect x="250" y="28" width="34" height="142" fill="#3B3CD6"/></g><path d="M40 130 L100 100 L160 84 L220 52 L280 30" fill="none" stroke="#F59E0B" stroke-width="5" stroke-linecap="round"/><g fill="#F59E0B"><circle cx="40" cy="130" r="6"/><circle cx="100" cy="100" r="6"/><circle cx="160" cy="84" r="6"/><circle cx="220" cy="52" r="6"/><circle cx="280" cy="30" r="6"/></g></svg>';
-  const hero = h('div', { class: 'hero' }, h('div', { class: 'brand' }, h('i', {}, 'DS'), 'DS ', h('span', { style: { color: '#FFC24D' } }, 'Quest')),
+  const hero = h('div', { class: 'hero' }, h('div', { class: 'brand' }, h('i', {}, 'DP'), 'Dhruv Patel ', h('span', { style: { color: '#FFC24D' } }, 'Academy')),
     h('div', {}, h('h1', { html: 'Build AI that works in the <em>real world</em>.' }), h('p', {}, 'Not just data science: how to build production-ready AI systems. Practical skills, not theory. Animated Picture Classes you can turn in 3D, real Python that runs in your browser (even offline), and a project after every module that you can defend.'),
       h('div', { class: 'hero-stage', 'aria-hidden': 'true' }, h('div', { class: 'hero-card', html: chart }))),
     h('div', { class: 'pts' }, h('div', {}, 'We start where the real work is: reading and cleaning data, the flagship module, free to try'), h('div', {}, 'Every number on screen comes from code that was really run and checked'), h('div', {}, 'Works offline. One payment for full access, no subscription')));
@@ -40,6 +40,7 @@ function showAuth(msg) {
     catch (ex) { err.textContent = ex.message; } go.disabled = false;
   } }, tabs, h('label', { class: 'f' }, 'USERNAME', u), h('label', { class: 'f', hidden: false }, em), h('label', { class: 'f' }, 'PASSWORD', p), h('label', { class: 'f', hidden: false }, d), gitBox, err, go, forgot,
     API.local ? h('div', { class: 'callout warn' }, h('b', {}, 'Offline mode. '), 'No server could be reached, so your account and progress are saved in THIS browser only.') : null,
+    API.demo ? null : h('button', { class: 'btn primary', type: 'button', style: { width: '100%' }, onclick: () => DSQ.startTour('#/welcome') }, 'See every curriculum, with a tour of each (no sign-up)'),
     API.demo ? null : h('button', { class: 'btn', type: 'button', style: { width: '100%' }, onclick: () => DSQ.startTour() }, 'Just looking? Take the guided tour (no sign-up)'),
     h('p', { class: 'muted', style: { fontSize: '13px', margin: 0 } }, 'New here? Create an account - your progress, scores and projects are stored on the server so you never start again. Passwords are stored hashed (scrypt), never in plain text.'),
     h('p', { class: 'muted', style: { fontSize: '12.5px', margin: 0 } }, 'By creating an account you agree to the ', h('a', { href: '#/legal/terms', onclick: e => { e.preventDefault(); showLegalPublic('terms'); } }, 'Terms'), ', ', h('a', { href: '#/legal/refund', onclick: e => { e.preventDefault(); showLegalPublic('refund'); } }, 'Refund policy'), ' and ', h('a', { href: '#/legal/privacy', onclick: e => { e.preventDefault(); showLegalPublic('privacy'); } }, 'Privacy policy'), '.'));
@@ -62,10 +63,10 @@ function showReset(token) {
    --------------------------------------------------------------------- */
 function renderBar() {
   const me = S.me, st = S.st, side = $('#topbar') || h('aside', { id: 'topbar', class: 'side' });
-  const groups = [['Learn', [['#/', 'Curriculum'], ['#/library', 'Library'], ['#/practice', 'Practice'], ['#/data', 'Datasets'], ['#/explore', 'Explorer'], ['#/sheets', 'Function sheets'], ['#/notebook', 'Notebook']]], ['Workshop', [['#/graphlab', 'Graph Lab'], ['#/picture', 'Picture Classes'], ['#/projection', '3D Projection'], ['#/lab', 'Labs'], ['#/terminal', 'Terminal'], ['#/arcade', 'Drills'], ['#/jupyter', 'Local Jupyter']]], ['Account', [['#/profile', 'Progress'], ['#/board', 'Ranking'], ['#/buy', me.role === 'admin' ? 'Plan' : 'Full access'], ['#/offline', 'Offline mode']].concat(me.role === 'admin' ? [['#/payments', 'Payments'], ['#/admin', 'Admin']] : [])]];
+  const groups = [['Learn', [['#/', 'Curriculum'], ['#/welcome', 'Curricula and tours'], ['#/library', 'Library'], ['#/practice', 'Practice'], ['#/data', 'Datasets'], ['#/explore', 'Explorer'], ['#/sheets', 'Function sheets'], ['#/notebook', 'Notebook']]], ['Workshop', [['#/graphlab', 'Graph Lab'], ['#/picture', 'Picture Classes'], ['#/projection', '3D Projection'], ['#/lab', 'Labs'], ['#/terminal', 'Terminal'], ['#/arcade', 'Drills'], ['#/jupyter', 'Local Jupyter']]], ['Account', [['#/profile', 'Progress'], ['#/history', 'My history'], ['#/board', 'Ranking'], ['#/buy', me.role === 'admin' ? 'Plan' : 'Full access'], ['#/offline', 'Offline mode']].concat(me.role === 'admin' ? [['#/payments', 'Payments'], ['#/admin', 'Admin']] : [])]];
   side.innerHTML = ''; document.body.classList.add('has-side');
   const menu = h('button', { class: 'side-toggle', type: 'button', 'aria-label': 'Menu', onclick: () => side.classList.toggle('open') }, 'Menu');
-  side.append(h('div', { class: 'side-top' }, h('a', { class: 'brand', href: '#/' }, h('i', {}, 'DS'), h('span', {}, 'DS Quest')), menu),
+  side.append(h('div', { class: 'side-top' }, h('a', { class: 'brand', href: '#/' }, h('i', {}, 'DP'), h('span', {}, 'Dhruv Patel Academy')), menu),
     h('nav', { class: 'nav', onclick: () => side.classList.remove('open') }, groups.map(([t, items]) => h('div', { class: 'grp' }, h('div', { class: 'eyebrow' }, t), items.map(([href, label]) => h('a', { href, 'data-h': href }, label))))),
     h('div', { class: 'grow' }),
     h('div', { class: 'side-foot' },
@@ -92,7 +93,8 @@ async function startApp() {
   setTimeout(() => syncNotebook(), 1500);
   document.body.dataset.view = 'app'; mergeCurriculum(); renderBar(); Py.start(); initAsk(); DSQ.mountTour();
   if (!S.st.pace) S.st.pace = 'steady';
-  window.onhashchange = route; if (!S.st.seenIntro && (!location.hash || location.hash === '#/')) location.hash = '#/intro'; route();
+  window.onhashchange = route; { let wp = ''; try { wp = localStorage.getItem('dsq.wantplan') || ''; if (wp) localStorage.removeItem('dsq.wantplan'); } catch (e) { } if (wp && /^[a-z0-9_-]+$/.test(wp) && !API.demo) { S.st.seenIntro = true; location.hash = '#/buy/plan/' + wp; } }
+  if (!S.st.seenIntro && (!location.hash || location.hash === '#/')) location.hash = '#/intro'; route();
 }
 function route() {
   dispose(); const hsh = location.hash.replace(/^#/, '') || '/', parts = hsh.split('/').filter(Boolean);
@@ -123,11 +125,14 @@ function route() {
     else if (view === 'sheets') main.append(viewSheets());
     else if (view === 'sheet') main.append(viewSheet(parts[1]));
     else if (view === 'buy') main.append(viewBuy());
+    else if (view === 'welcome') main.append(viewWelcome(parts));
     else if (view === 'graphlab') main.append(viewGraphLab());
     else if (view === 'picture') main.append(viewPicture(parts[1], parts[2]));
     else if (view === 'projection') main.append(viewProjection());
     else if (view === 'legal') legalPage(main, parts[1]);
     else if (view === 'payments' && S.me.role === 'admin') main.append(viewPayments());
+    else if (view === 'history') main.append(viewHistory());
+    else if (view === 'study') main.append(viewStudyRoom(parts[1], parts[2]));
     else if (view === 'admin' && S.me.role === 'admin') main.append(viewAdmin());
     else main.append(viewDashboard());
   } catch (e) { console.error(e); main.append(h('div', { class: 'card pad' }, 'Something went wrong showing this page: ' + e.message)); }
@@ -172,11 +177,12 @@ function moduleCards() {
     const mods = visibleMods().filter(m => m.phase === ph.id); if (!mods.length) return;
     box.append(h('section', { class: 'phase' }, h('h3', {}, h('span', {}, 'Phase ' + ph.id), ph.name, h('small', { style: { textTransform: 'none', letterSpacing: 0, fontWeight: 600 } }, ph.blurb)),
       h('div', { class: 'mods' }, mods.map(m => {
-        const pr = m.live ? S.moduleProgress(m) : 0, done = m.live && pr >= 1 && st.proj[m.id] && st.proj[m.id].published;
-        return h('a', { class: 'card mod' + (m.live ? '' : ' planned') + (done ? ' done' : ''), href: '#/m/' + m.id },
+        const room = !m.live && typeof DSQ.hasStudio === 'function' && DSQ.hasStudio(m.id), rp = room && DSQ.studio[m.id] ? DSQ.studioState(m.id).done.length / DSQ.studio[m.id].sections.length : 0;
+        const pr = m.live ? S.moduleProgress(m) : rp, done = m.live && pr >= 1 && st.proj[m.id] && st.proj[m.id].published;
+        return h('a', { class: 'card mod' + (m.live || room ? '' : ' planned') + (done ? ' done' : ''), href: '#/m/' + m.id },
           h('span', { class: 'ic', style: { background: colv(m.color) } }, m.icon), m.flagship ? h('span', { class: 'chip flag flagcard' }, '★ Flagship: the 70%') : null, h('h4', {}, m.title), h('p', {}, m.blurb),
-          m.live ? h('div', { class: 'bar' }, h('i', { style: { width: Math.round(pr * 100) + '%' } })) : null,
-          h('span', { class: 'badge chip ' + (m.live ? (done ? 'ok' : 'brand') : '') }, m.live ? (!gate(m).open ? 'locked' : done ? 'complete' : Math.round(pr * 100) + '%') : (m.locked ? 'Paid access' : m.hours + ' h')));
+          m.live || room ? h('div', { class: 'bar' }, h('i', { style: { width: Math.round(pr * 100) + '%' } })) : null,
+          h('span', { class: 'badge chip ' + (m.live ? (done ? 'ok' : 'brand') : room ? 'brand' : '') }, m.live ? (!gate(m).open ? 'locked' : done ? 'complete' : Math.round(pr * 100) + '%') : room ? (pr ? Math.round(pr * 100) + '%' : 'study room') : (m.locked ? 'Paid access' : m.hours + ' h')));
       }))));
   });
   return box;
@@ -218,8 +224,9 @@ function viewModule(id) {
   const m = modById(id); if (!m) return h('div', { class: 'card pad' }, 'Unknown module.');
   const st = S.st, root = h('div', { class: 'stack' });
   root.append(h('div', { class: 'page-h' }, h('div', {}, h('a', { href: '#/', class: 'muted', style: { textDecoration: 'none', fontWeight: 700 } }, '← Curriculum'), h('h1', { style: { marginTop: '6px' } }, m.title), h('p', { class: 'muted', style: { margin: '4px 0 0', maxWidth: '70ch' } }, m.blurb), m.real ? h('div', { class: 'realnote' }, h('b', {}, 'In the real world: '), m.real) : null), h('div', { class: 'row' }, m.flagship ? h('span', { class: 'chip flag' }, '★ Flagship') : null, (typeof PIC !== 'undefined' && PIC.forModule(m.id).length) ? h('a', { class: 'btn sm', href: '#/picture/m/' + m.id }, 'Picture Classes (' + PIC.forModule(m.id).length + ')') : null, m.sheet ? h('a', { class: 'btn sm primary', href: '#/sheet/' + m.id }, 'Function sheet') : null, h('span', { class: 'chip' }, m.hours + ' h'), h('span', { class: 'chip brand' }, 'Phase ' + m.phase))));
+  if (typeof DSQ.hasStudio === 'function' && DSQ.hasStudio(m.id)) { const sd = DSQ.studioState(m.id), tot = DSQ.studio[m.id] ? DSQ.studio[m.id].sections.length : 9; root.append(h('div', { class: 'deep-cta' }, h('div', {}, h('b', {}, '🎓 Deep study room'), h('div', { class: 'muted', style: { fontSize: '13.5px' } }, 'Animated labs, a step-by-step player, real Python, quick checks, cheat sheet and glossary. Works offline.' + (sd.done.length ? ' You have finished ' + sd.done.length + ' of ' + tot + ' sections.' : ''))), h('span', { class: 'grow' }), h('a', { class: 'btn primary', href: '#/study/' + m.id }, sd.done.length ? 'Continue' : 'Open the study room'))); }
   if (!m.live) {
-    root.append(h('div', { class: 'layout2' }, h('div', { class: 'card pad stack' }, h('h3', {}, 'What this module will teach'), h('ul', { class: 'syl' }, m.syllabus.map(s => h('li', {}, s))), m.locked ? h('div', { class: 'callout warn' }, h('a', { class: 'btn sm primary', href: '#/buy', style: { float: 'right', marginLeft: '10px' } }, 'See full access'), h('b', {}, 'Paid access: '), 'the lessons, exercises, assessment and notebooks of this module are part of paid access' + (DSQ.premium.loaded ? ' and are not included in this account yet.' : '. Sign in with an account that has access to open them.')) : h('div', { class: 'callout warn' }, h('b', {}, 'Status: '), 'the playable version of this module (interactive lessons, graded exercises, module assessment and personal projects) is next in the build order. Finish the earlier modules first - they are the foundation.')),
+    root.append(h('div', { class: 'layout2' }, h('div', { class: 'card pad stack' }, h('h3', {}, 'What this module will teach'), h('ul', { class: 'syl' }, m.syllabus.map(s => h('li', {}, s))), m.locked ? h('div', { class: 'callout warn' }, h('a', { class: 'btn sm primary', href: '#/buy', style: { float: 'right', marginLeft: '10px' } }, 'See full access'), h('b', {}, 'Paid access: '), 'the lessons, exercises, assessment and notebooks of this module are part of paid access' + (DSQ.premium.loaded ? ' and are not included in this account yet.' : '. Sign in with an account that has access to open them.')) : (typeof DSQ.hasStudio === 'function' && DSQ.hasStudio(m.id)) ? h('div', { class: 'callout tip' }, h('b', {}, 'How this module is taught: '), 'in its study room (the button above): animated steps and labs that run real code, quick checks, a cheat sheet, a glossary and exam-style questions. Graded exercises and projects for this module are still being built.') : h('div', { class: 'callout warn' }, h('b', {}, 'Status: '), 'the playable version of this module (interactive lessons, graded exercises, module assessment and personal projects) is next in the build order. Finish the earlier modules first - they are the foundation.')),
       h('div', { class: 'card pad stack' }, h('h3', {}, 'Capstone project'), h('p', {}, m.capstone), h('p', { class: 'muted' }, 'Like every module, you will get a project variant that is different from other learners\'.'))));
     return root;
   }
@@ -479,7 +486,7 @@ function viewAdmin() {
   { const m = /^#\/reset\/([0-9a-f]{64})$/.exec(location.hash); if (m) { showReset(m[1]); return; } }
   const lg = /^#\/legal\/(terms|refund|privacy)$/.exec(location.hash);
   try { const r = await API.get('/api/me'); S.set(r.user, r.state, r.projects, r.judge); API.remember(false); startApp(); }
-  catch (e) { document.documentElement.dataset.theme = 'light'; if (lg) showLegalPublic(lg[1]); else showAuth(); }
+  catch (e) { document.documentElement.dataset.theme = 'light'; if (lg) showLegalPublic(lg[1]); else if (/^#\/welcome/.test(location.hash) && !API.demo) DSQ.startTour(location.hash); else showAuth(); }
 })();
 
 /* ---------------------------------------------------------------------

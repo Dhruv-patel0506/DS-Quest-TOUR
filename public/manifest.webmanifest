@@ -1,6 +1,6 @@
 {
-  "name": "DS Quest",
-  "short_name": "DS Quest",
+  "name": "Dhruv Patel Academy",
+  "short_name": "Dhruv Patel",
   "description": "Learn data science and AI by building it. Works offline once installed.",
   "start_url": "./",
   "scope": "./",

@@ -53,5 +53,5 @@ PIC.lesson({
 /* ============================ 7. Automation ============================ */
 
 /* ============================ 8. Your pandas picture classes ============================ */
-PIC.lesson({ id: 'pandas-1', group: 'Pandas (from your own files)', title: 'Pandas Picture Class, part 1', icon: '🐼', sub: 'Create a DataFrame, look at it, save and load CSV, select and filter: your own lesson file, shown inside DS Quest.', embed: 'picture/pandas_part1.html' });
+PIC.lesson({ id: 'pandas-1', group: 'Pandas (from your own files)', title: 'Pandas Picture Class, part 1', icon: '🐼', sub: 'Create a DataFrame, look at it, save and load CSV, select and filter: your own lesson file, shown inside Dhruv Patel Academy.', embed: 'picture/pandas_part1.html' });
 PIC.lesson({ id: 'pandas-2', group: 'Pandas (from your own files)', title: 'Pandas Picture Class, part 2', icon: '🐼', sub: 'Your second pandas lesson file: the next topics, with the same picture-by-picture style.', embed: 'picture/pandas_part2.html' });

@@ -73,5 +73,25 @@ let fails = 0; const ok = (c, m) => { console.log((c ? 'PASS ' : 'FAIL ') + m); 
   ok(![...store.values()].some(v => v.includes('secret-token')), 'vercel token is encrypted at rest');
   const k = (await call('GET', '/api/nb/key')).json.key; r = await call('POST', '/api/nb/report', { key: k, qid: 'np-9-1', ok: true }, { nocookie: true }); ok(r.status === 200 && r.json.solved === 1, 'notebook reports a solved question with its key');
   ok((await call('GET', '/api/me', null, { nocookie: true })).status === 401, 'no cookie = not signed in');
+  /* tutor chain: first model rate-limited -> next one answers; rests; same question is cached; all down -> honest "busy" */
+  r = await call('POST', '/api/llm/ask', { question: 'what is a mean?' }); ok(r.status === 200 && r.json.available === false && /not configured/.test(r.json.hint), 'no tutor key: honest hint, no crash');
+  const seen = []; let groqUp = true;
+  const fake = async (url) => { seen.push(url); const g = /generativelanguage/.test(url), q = /groq/.test(url); const reply = (st, body) => ({ ok: st < 400, status: st, json: async () => body });
+    if (g) return reply(429, { error: { message: 'quota' } }); if (q && groqUp) return reply(200, { choices: [{ message: { content: 'The mean is the sum divided by the count.' } }] }); return reply(503, {}); };
+  const api2 = createApi({ kv: redis(env), env: Object.assign({}, env, { GEMINI_API_KEY: 'g', GROQ_API_KEY: 'q' }), fetchFn: fake });
+  const call2 = async (method, path, body) => api2.handle({ method, path, body, headers: { cookie: cookieJar, 'x-forwarded-for': '1.2.3.4' } });
+  r = await call2('POST', '/api/llm/ask', { question: 'what is a mean?', context: { page: 'stats', lesson: 'averages' } });
+  ok(r.status === 200 && r.json.available && r.json.provider === 'groq' && r.json.trail.length === 2 && r.json.trail[0].ok === false && Array.isArray(r.json.trail), 'gemini 429 falls through to groq; the response carries a trail');
+  ok(!seen.some(u => /key=/.test(u)), 'the Gemini key is never put in the URL');
+  r = await call2('GET', '/api/llm/status'); ok(r.json.ready && r.json.providers.find(p => p.id === 'gemini').ok === false && r.json.providers.find(p => p.id === 'groq').ok === true, 'status shows gemini resting, groq ready');
+  const n = seen.length; r = await call2('POST', '/api/llm/ask', { question: 'what is a mean?', context: { page: 'stats', lesson: 'averages' } }); ok(r.json.cached === true && seen.length === n, 'the same question is served from the cache without calling a model');
+  groqUp = false; r = await call2('POST', '/api/llm/ask', { question: 'and the median?', context: { page: 'stats' } }); ok(r.status === 200 && r.json.available === false && /busy/.test(r.json.hint), 'every model down: honest busy message, 200 not a crash');
+  /* history pass for the Django service */
+  r = await call('GET', '/api/history/token'); ok(r.status === 200 && r.json.available === false, 'history token: off when no shared secret is set');
+  const api3 = createApi({ kv: redis(env), env: Object.assign({}, env, { DSQ_HIST_SECRET: 'hist-shared' }) });
+  const hr = await api3.handle({ method: 'GET', path: '/api/history/token', headers: { cookie: cookieJar, 'x-forwarded-for': '1.2.3.4' } });
+  const [hp, hs] = hr.json.token.split('.'), pl = JSON.parse(Buffer.from(hp, 'base64url').toString());
+  ok(hr.json.available && pl.u === 'ana_k' && pl.v === 1 && pl.exp > Date.now() / 1000 + 3000 && hs === require('crypto').createHmac('sha256', 'hist-shared').update(hp).digest('hex'), 'history token: signed with the shared secret, carries the learner and an expiry');
+  ok((await api3.handle({ method: 'GET', path: '/api/history/token', headers: { 'x-forwarded-for': '1.2.3.4' } })).status === 401, 'history token: needs sign-in');
   console.log(fails ? '\n' + fails + ' FAILED' : '\nall hosted API checks passed'); redisSrv.close(); smtp.close(); process.exit(fails ? 1 : 0);
 })().catch(e => { console.error(e); process.exit(1); });

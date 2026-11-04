@@ -1,6 +1,6 @@
 'use strict';
 /* =====================================================================
-   DS Quest - utilities (loaded first; also loaded by tools/verify.js in node)
+   Dhruv Patel Academy - utilities (loaded first; also loaded by tools/verify.js in node)
    ===================================================================== */
 const DSQ = (typeof window !== 'undefined' ? (window.DSQ = window.DSQ || {}) : (global.DSQ = global.DSQ || {}));
 DSQ.modules = DSQ.modules || [];

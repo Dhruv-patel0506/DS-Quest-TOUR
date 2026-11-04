@@ -43,4 +43,11 @@ DSQ.realWorld = {
   sysdesign: 'Design with numbers: load, latency budgets, failure modes and fallbacks, before a line of code.',
   devops: 'CI/CD, Kubernetes and infrastructure as code: how changes reach production safely and how you know they worked.',
   uiux: 'The system is used by people: clear charts, accessible screens and usability tested with real users.',
+  marketing: 'Budgets are decided on numbers that must survive a hard question: what did a customer cost, and how do we know the campaign caused it?',
+  copywriting: 'Words are tested like any other change: clear enough to read quickly, specific enough to believe, and judged by what readers do, not by taste.',
+  web: 'Every data product is finally a page someone opens on a phone: it has to load fast, work with a keyboard and a screen reader, and still read well when the data is late.',
+  genai: 'You will not train these models, but you will pay for them, size them and choose how to adapt them: the formulas here are the arithmetic behind those decisions.',
+  vectordb: 'Retrieval quality decides whether an AI assistant is right or confidently wrong, and it is measured with recall on real questions, not with demos.',
+  llmapps: 'A model call is the small part: the application is the validation, the tool permissions, the cost limits and the tests around it.',
+  industry: 'Hiring managers read evidence: finished projects, honest measurements and clear explanations, so this module turns skills into proof.'
 };

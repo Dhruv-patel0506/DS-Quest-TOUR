@@ -9,11 +9,11 @@ const LEGAL_TITLES = { terms: 'Terms of use', refund: 'Refund policy', privacy: 
 const LEGAL_UPDATED = '1 November 2026';
 
 function legalDocs(L, plan) {
-  const biz = L.business || 'DS Quest', mail = L.email || '[owner: set DSQ_CONTACT_EMAIL]', law = L.law || '[owner: set DSQ_JURISDICTION, for example "the courts of Ahmedabad, India"]';
+  const biz = L.business || 'Dhruv Patel Academy', mail = L.email || '[owner: set DSQ_CONTACT_EMAIL]', law = L.law || '[owner: set DSQ_JURISDICTION, for example "the courts of Ahmedabad, India"]';
   const days = L.refundDays, access = plan && plan.days ? plan.days + ' days' : 'the period shown at checkout', price = plan ? 'Rs ' + plan.inr : 'the price shown at checkout';
   return {
     terms: [
-      ['Who we are', `DS Quest is an online course and practice site run by ${biz}${L.address ? ', ' + L.address : ''}. You can reach us at ${mail}. By creating an account or buying access you agree to these terms.`],
+      ['Who we are', `Dhruv Patel Academy is an online course and practice site run by ${biz}${L.address ? ', ' + L.address : ''}. You can reach us at ${mail}. By creating an account or buying access you agree to these terms.`],
       ['Your account', 'You need an account to save progress and to buy access. Give a real e-mail address (it is how you reset a forgotten password), keep your password private, and tell us if you think someone else is using your account. You are responsible for what happens under your account. One account is for one person.'],
       ['Free and paid parts', `Some modules are free for everyone. The rest, with their lessons, exercises, assessments, function sheets and notebooks, are part of paid access. Paid access costs ${price} as one payment and lasts ${access} from the day you pay, unless we agreed something else with you in writing. It does not renew by itself. If you buy again while you still have access, the new period is added to the end of the old one.`],
       ['What you may do', 'You may use the course for your own learning, on your own devices, including offline copies the app saves for you. You may share your own finished projects, screenshots of your own work and what you learned.'],
@@ -45,14 +45,14 @@ function legalDocs(L, plan) {
       ['How long we keep it', 'Account data stays while your account exists. Payment records are kept as long as accounting and tax rules require, even if you delete your account. Backups are overwritten in the normal course.'],
       ['Your choices', `You can ask us to show you what we hold, correct it, or delete your account and progress, by writing to ${mail} from your account e-mail. You can also change your display name, e-mail and tokens in the app. We answer within 30 days. Where India's Digital Personal Data Protection Act 2023 or another law gives you more rights, those apply too.`],
       ['Security', 'Passwords are hashed, saved tokens are encrypted, paid lesson files are not publicly reachable, and sign-in attempts are rate limited. No system is perfectly safe; if something affecting your data goes wrong we will tell you.'],
-      ['Children', 'DS Quest is for people aged 18 and over, or younger learners using it with a parent or guardian who agrees to these policies.'],
+      ['Children', 'Dhruv Patel Academy is for people aged 18 and over, or younger learners using it with a parent or guardian who agrees to these policies.'],
       ['Changes and contact', `We may update this policy; the date at the top says when. Questions: ${mail}${L.address ? ' or by post at ' + L.address : ''}.`],
     ],
   };
 }
 
 function viewLegal(which, cfg) {
-  const L = (cfg && cfg.legal) || { business: 'DS Quest', refundDays: 7 }, plan = cfg && cfg.plan, docs = legalDocs(L, plan), key = docs[which] ? which : 'terms';
+  const L = (cfg && cfg.legal) || { business: 'Dhruv Patel Academy', refundDays: 7 }, plan = cfg && cfg.plan, docs = legalDocs(L, plan), key = docs[which] ? which : 'terms';
   const root = h('div', { class: 'stack legal', style: { maxWidth: '760px' } });
   root.append(h('div', { class: 'page-h' }, h('div', {}, h('div', { class: 'eyebrow' }, 'Legal'), h('h1', {}, LEGAL_TITLES[key]), h('p', { class: 'muted' }, 'Last updated ' + LEGAL_UPDATED + '.'))),
     h('div', { class: 'row', style: { gap: '6px', flexWrap: 'wrap' } }, Object.keys(LEGAL_TITLES).map(k => h('a', { class: 'chip' + (k === key ? ' ok' : ''), href: '#/legal/' + k }, LEGAL_TITLES[k]))));

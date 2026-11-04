@@ -1,13 +1,13 @@
-# DS Quest
+# Dhruv Patel Academy
 
 A browser-based academy for data science and AI engineering: interactive lessons, code exercises that run **in the browser**, 3-D concept models and algorithm animations,
 practice notebooks, and a verification harness that proves every exercise is solvable. It runs on phones and **works offline**.
 
-> **Live tour (no sign-up):** open the deployed site and add `#/tour` to the address, or press *Just looking? Take the guided tour* on the sign-in page.
+> **Live tour (no sign-up):** open the deployed site and add `#/welcome` to the address (every curriculum, with a tour of each: watch an animated lesson and try a study room from every module), or `#/tour` for the guided walk-through.
 > The tour shows an excerpt of every module, with all solutions withheld.
 
-This is the **public showcase** of the project. The full course is a paid product: its 33 premium modules, their solutions and practice notebooks are **not** in this repository.
-What is here: the whole engine, 9 complete free modules (Python, NumPy, pandas, Matplotlib, SQL, LLM evaluation, uncertainty, responsible AI) and the tooling.
+This is the **public showcase** of the project. The full course is a paid product: its 39 premium modules, their solutions and practice notebooks are **not** in this repository.
+What is here: the whole engine, 10 complete free modules (Python, NumPy, pandas, Matplotlib, SQL, LLM evaluation, uncertainty, responsible AI) and the tooling.
 
 
 ## What is technically interesting

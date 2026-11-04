@@ -1,6 +1,6 @@
 'use strict';
 /* =====================================================================
-   DS Quest server  -  zero dependencies (Node 18+)
+   Dhruv Patel Academy server  -  zero dependencies (Node 18+)
    ---------------------------------------------------------------------
    * serves ./public
    * accounts: scrypt-hashed passwords, httpOnly session cookie
@@ -162,7 +162,7 @@ const linkedinPost = (u, p, links) => {
   const tags = (p.skills || []).slice(0, 5).map(x => '#' + String(x).replace(/[^A-Za-z0-9]/g, ''));
   const text = 'I just shipped a new data project: ' + (p.title || 'my project') + '.\n\n' + (p.pitch ? p.pitch.slice(0, 230) + (p.pitch.length > 230 ? '...' : '') + '\n\n' : '') +
     (p.logic ? 'How it works: ' + String(p.logic).replace(/\s+/g, ' ').slice(0, 280) + (String(p.logic).length > 280 ? '...' : '') + '\n\n' : '') + (Array.isArray(p.milestones) && p.milestones.length ? 'What I built, step by step:\n' + p.milestones.slice(0, 8).map((x, i) => (i + 1) + '. ' + String(x).slice(0, 90)).join('\n') + '\n\n' : '') + 'What I built it with: ' + ((p.skills || []).slice(0, 5).join(', ') || 'Python') + '.\n' + (links.site ? 'Live: ' + links.site + '\n' : '') + (links.repo ? 'Code: ' + links.repo + '\n' : '') + (u.linkedin ? 'More about me: ' + u.linkedin + '\n' : '') +
-    '\nBuilt step by step in DS Quest, learning data science by building.\n\n' + tags.concat(['#DataScience', '#Python', '#BuildInPublic']).slice(0, 8).join(' ');
+    '\nBuilt step by step in Dhruv Patel Academy, learning data science by building.\n\n' + tags.concat(['#DataScience', '#Python', '#BuildInPublic']).slice(0, 8).join(' ');
   return { text, url: 'https://www.linkedin.com/feed/?shareActive=true&text=' + encodeURIComponent(text), shareUrl: links.site ? 'https://www.linkedin.com/sharing/share-offsite/?url=' + encodeURIComponent(links.site) : null };
 };
 
@@ -229,7 +229,7 @@ async function llmChat(messages, image, opts = {}) {
   }
   return { text: null, trail };
 }
-const TUTOR_SYSTEM = 'You are the friendly tutor inside DS Quest, a course that teaches data science, ML, deep learning, RAG and agents by building. ' +
+const TUTOR_SYSTEM = 'You are the friendly tutor inside Dhruv Patel Academy, a course that teaches data science, ML, deep learning, RAG and agents by building. ' +
   'Answer the learner\'s question using ONLY the lesson context, code, output and marked region supplied, plus well-established general knowledge. ' +
   'If the context does not contain what you need, say so plainly and explain the general idea instead of guessing. Never invent function names, numbers or outputs. ' +
   'Teach, do not just tell: first the idea in plain words, then what each relevant line does, then a tiny example or a next experiment. ' +
@@ -316,9 +316,9 @@ async function api(req, res, url) {
   if (route === 'POST /api/forgot') {
     if (throttled('forgot|' + ip)) return send(res, 429, { error: 'Too many requests. Try again in a minute.' }); noteFail('forgot|' + ip);
     const id = String(body.identifier || '').trim().toLowerCase(), cfg = mailConfig(process.env), u0 = id.includes('@') ? userByEmail(id) : users[id];
-    const generic = { ok: true, mailConfigured: !!cfg, message: cfg ? 'If an account matches, a reset link is on its way (check spam). It works for 30 minutes.' : 'No email service is configured on this computer, so the reset link was printed in the DS Quest server window.' };
+    const generic = { ok: true, mailConfigured: !!cfg, message: cfg ? 'If an account matches, a reset link is on its way (check spam). It works for 30 minutes.' : 'No email service is configured on this computer, so the reset link was printed in the Dhruv Patel Academy server window.' };
     if (u0 && u0.email) { const token = require('crypto').randomBytes(32).toString('hex'), link = (process.env.APP_URL || 'http://' + (req.headers.host || '127.0.0.1:' + PORT)) + '/#/reset/' + token; resetTokens.set(require('crypto').createHash('sha256').update(token).digest('hex'), { name: u0.username.toLowerCase(), exp: Date.now() + 30 * 60e3 });
-      if (cfg) { try { await sendMail(Object.assign({}, cfg, { to: u0.email, subject: 'Reset your DS Quest password', text: 'Hi ' + u0.display + ',\n\nOpen this link within 30 minutes to choose a new password for "' + u0.username + '":\n' + link + '\n\nIf it was not you, ignore this email.\n' })); } catch (e) { console.error('mail failed:', e.message); } }
+      if (cfg) { try { await sendMail(Object.assign({}, cfg, { to: u0.email, subject: 'Reset your Dhruv Patel Academy password', text: 'Hi ' + u0.display + ',\n\nOpen this link within 30 minutes to choose a new password for "' + u0.username + '":\n' + link + '\n\nIf it was not you, ignore this email.\n' })); } catch (e) { console.error('mail failed:', e.message); } }
       else console.log('[password reset for ' + u0.username + '] ' + link); }
     return send(res, 200, generic);
   }
@@ -346,7 +346,7 @@ async function api(req, res, url) {
     if (route === 'POST /api/jupyter/start') await jyStart('http://' + (req.headers.host || '127.0.0.1:' + PORT), body.install === true);
     return send(res, 200, await jyStatus());
   }
-  if (route === 'GET /api/pay/config') return send(res, 200, { enabled: false, local: true, legal: { business: 'DS Quest', email: '', address: '', refundDays: 7, law: '', reviewed: false } });
+  if (route === 'GET /api/pay/config') return send(res, 200, { enabled: false, local: true, legal: { business: 'Dhruv Patel Academy', email: '', address: '', refundDays: 7, law: '', reviewed: false } });
   if (route === 'GET /api/content/manifest') return send(res, 200, { premium: CONTENT.premium(), entitled: CONTENT.entitled(u, process.env), gating: process.env.DSQ_GATING === 'on', available: CONTENT.available(), expected: CONTENT.manifest().files.filter(f => f.paid).length });
   if (route === 'GET /api/content/bundle') { const out = CONTENT.bundle(CONTENT.entitled(u, process.env)); return send(res, 200, { files: out.files, modules: out.modules, premium: CONTENT.premium(), gating: process.env.DSQ_GATING === 'on' }); }
   { const nbm = req.method === 'GET' && /^\/api\/content\/notebook\/([a-z0-9-]+\.ipynb)$/.exec(url.pathname);
@@ -415,7 +415,7 @@ async function api(req, res, url) {
         `<h2>Results</h2>${imgNames.map(n => `<p><img src="figures/${n}" alt="${n}"></p>`).join('')}` +
         `<h2>Output</h2><pre>${escH(meta.output || '')}</pre><h2>Code</h2><pre>${escH(code)}</pre>`);
       fs.writeFileSync(path.join(dir, 'README.md'),
-        `# ${meta.title || pdir}\n\n${meta.pitch || ''}\n\n- Built by **${u.display}** in DS Quest (${meta.module || ''})\n- Edition: ${meta.edition || 'Standard'}\n- Dataset: ${meta.dataset || ''}\n\n## Approach\n\n${meta.logic || ''}\n\n## Run it\n\n\`\`\`bash\npip install numpy pandas matplotlib\npython solution.py\n\`\`\`\n\n## Results\n\n${imgNames.map(n => `![${n}](figures/${n})`).join('\n\n')}\n`);
+        `# ${meta.title || pdir}\n\n${meta.pitch || ''}\n\n- Built by **${u.display}** in Dhruv Patel Academy (${meta.module || ''})\n- Edition: ${meta.edition || 'Standard'}\n- Dataset: ${meta.dataset || ''}\n\n## Approach\n\n${meta.logic || ''}\n\n## Run it\n\n\`\`\`bash\npip install numpy pandas matplotlib\npython solution.py\n\`\`\`\n\n## Results\n\n${imgNames.map(n => `![${n}](figures/${n})`).join('\n\n')}\n`);
     }
     const msg = final ? `Finish project: ${meta.title || pdir}` : `Milestone ${meta.milestone || ''}: ${meta.milestoneTitle || ''}`.trim();
     const g = await commitProject(u, dir, msg);
@@ -575,4 +575,4 @@ http.createServer((req, res) => {
   const m = /^\/u\/([^/]+)\/([^/]+)\/(.*)$/.exec(pn);
   if (m) return serveFile(res, path.join(WORK, safeSeg(m[1]), safeSeg(m[2])), m[3] || 'index.html', true);
   return serveFile(res, PUBLIC, pn === '/' ? 'index.html' : pn.replace(/^\/+/, ''));
-}).listen(PORT, HOST, () => console.log(`DS Quest running at http://${HOST === '0.0.0.0' ? 'localhost' : HOST}:${PORT}`));
+}).listen(PORT, HOST, () => console.log(`Dhruv Patel Academy running at http://${HOST === '0.0.0.0' ? 'localhost' : HOST}:${PORT}`));

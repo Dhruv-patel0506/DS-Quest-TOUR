@@ -1,16 +1,16 @@
-"""DS Quest <-> your own Jupyter, in one command.
+"""Dhruv Patel Academy <-> your own Jupyter, in one command.
 
 Run it once in the terminal you normally use for Python (Anaconda Prompt, PowerShell, bash):
 
-    python dsquest_jupyter.py                      # uses the app address printed on the DS Quest "Jupyter" page
+    python dsquest_jupyter.py                      # uses the app address printed on the Dhruv Patel Academy "Jupyter" page
 
 What it does:
   1. uses the Jupyter that is installed in THIS Python / Anaconda environment (offers to install it if missing),
   2. copies the practice notebooks for every module into  ~/dsquest/  (never overwrites your own edits),
-  3. starts JupyterLab on 127.0.0.1 only, with a random one-time token, allowing ONLY the DS Quest page to embed it,
-  4. opens DS Quest in your browser, which connects and shows Jupyter beside the lesson.
+  3. starts JupyterLab on 127.0.0.1 only, with a random one-time token, allowing ONLY the Dhruv Patel Academy page to embed it,
+  4. opens Dhruv Patel Academy in your browser, which connects and shows Jupyter beside the lesson.
 
-Nothing leaves your computer except the notebook download from the DS Quest site. Stop with Ctrl+C.
+Nothing leaves your computer except the notebook download from the Dhruv Patel Academy site. Stop with Ctrl+C.
 """
 import argparse, json, os, re, secrets, shutil, socket, subprocess, sys, urllib.request, webbrowser
 
@@ -41,7 +41,7 @@ def fetch(url):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument('--app', default=DEFAULT_APP, help='DS Quest address (default %s)' % DEFAULT_APP)
+    ap.add_argument('--app', default=DEFAULT_APP, help='Dhruv Patel Academy address (default %s)' % DEFAULT_APP)
     ap.add_argument('--port', type=int, default=8899)
     ap.add_argument('--dir', default=os.path.join(os.path.expanduser('~'), 'dsquest'))
     ap.add_argument('--refresh', action='store_true', help='overwrite notebooks that already exist')
@@ -110,7 +110,7 @@ def main():
            '--IdentityProvider.token=' + token]
     link = '%s/#/jupyter/connect/%d/%s' % (app, port, token)
     print('\nStarting JupyterLab on 127.0.0.1:%d ...' % port)
-    print('DS Quest link (opens and connects automatically):\n  ' + link + '\n')
+    print('Dhruv Patel Academy link (opens and connects automatically):\n  ' + link + '\n')
     if not a.no_open:
         try:
             webbrowser.open(link)

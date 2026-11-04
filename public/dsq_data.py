@@ -1,4 +1,4 @@
-"""DS Quest datasets.
+"""Dhruv Patel Academy datasets.
 
 Six realistic tables of 50,000 to 500,000 rows, generated on demand from a seed.
 The generator is the pristine copy: every call to load() rebuilds the table from scratch, so nothing you do to a

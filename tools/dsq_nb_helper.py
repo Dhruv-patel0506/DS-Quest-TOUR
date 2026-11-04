@@ -1,4 +1,4 @@
-# --- DS Quest practice checker (runs in YOUR notebook, on YOUR variables) ---
+# --- Dhruv Patel Academy practice checker (runs in YOUR notebook, on YOUR variables) ---
 import json as _json, sys as _sys, urllib.request as _ur
 
 class _DSQ:
@@ -9,15 +9,15 @@ class _DSQ:
         self.module = pack['title']
         for q in pack['questions']:
             self.qs[q['id']] = q; self.order.append(q['id'])
-        print(f"DS Quest: {len(self.order)} questions loaded for '{self.module}'. Write your answer, then run the check cell under it.")
-        if self._auto(): print('Linked to your DS Quest account: solved questions count in the app.')
+        print(f"Dhruv Patel Academy: {len(self.order)} questions loaded for '{self.module}'. Write your answer, then run the check cell under it.")
+        if self._auto(): print('Linked to your Dhruv Patel Academy account: solved questions count in the app.')
 
     def connect(self, url, key, quiet=False):
         self.url = url.rstrip('/'); self.key = key
         if not quiet: print('Connected: solved questions will be reported to', self.url)
 
     def _auto(self):
-        # DS Quest writes dsq_config.json next to the notebooks when you open them from the app
+        # Dhruv Patel Academy writes dsq_config.json next to the notebooks when you open them from the app
         import os
         d = os.getcwd()
         for _ in range(4):

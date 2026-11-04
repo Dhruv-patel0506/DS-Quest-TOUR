@@ -1,11 +1,11 @@
 'use strict';
-/* DS Quest service worker: makes the whole app run with no internet after the first visit.
+/* Dhruv Patel Academy service worker: makes the whole app run with no internet after the first visit.
    Generated numbers (VERSION, PACK) are written by tools/build_sw.js - run it before every deploy.
    - app files (html/js/css/fonts/helpers): kept in a versioned cache, served instantly, refreshed in the background
    - the Python engine pack (public/vendor/pyodide, wheels, notebooks): cache-first, kept across app updates
    - /api/content/bundle and notebooks (paid lessons): network first, last copy kept in 'dsq-private' for offline, removed when the learner signs out
-   - all other /api/* and /u/* are live server routes and are never cached */
-const VERSION = 'ee12deaf45';
+   - all other /api/*, /hist/* and /u/* are live server routes and are never cached */
+const VERSION = 'f22ec006d2';
 const PACK = 'dsq-pack-0.27.7';
 const SHELL = 'dsq-shell-' + VERSION;
 const CDN_OK = /^https:\/\/(cdn\.jsdelivr\.net\/pyodide\/|pypi\.org\/simple\/|files\.pythonhosted\.org\/)/;
@@ -62,9 +62,9 @@ self.addEventListener('fetch', e => {
   const u = new URL(req.url);
   if (u.origin === location.origin) {
     if (/\/api\/content\/(bundle|notebook\/)/.test(u.pathname)) { e.respondWith(networkFirst('dsq-private', req)); return; }
-    if (/\/(api|u)\//.test(u.pathname) && !/\/vendor\//.test(u.pathname)) return;
+    if (/\/(api|u|hist)\//.test(u.pathname) && !/\/vendor\//.test(u.pathname)) return;
     if (/\/(vendor\/(pyodide|wheels)|notebooks)\//.test(u.pathname)) { e.respondWith(cacheFirst(PACK, req)); return; }
-    if (req.mode === 'navigate' && u.pathname.indexOf('/picture/') < 0) { e.respondWith(swr(SHELL, req, new Request(new URL('index.html', self.registration.scope)))); return; }
+    if (req.mode === 'navigate' && u.pathname.indexOf('/picture/') < 0 && u.pathname.indexOf('/studio/') < 0) { e.respondWith(swr(SHELL, req, new Request(new URL('index.html', self.registration.scope)))); return; }
     /* the app asks for some files with a cache-busting query (dsq_http.py?v=9): one cache entry per path */
     e.respondWith(swr(SHELL, req, new Request(u.origin + u.pathname)).catch(() => caches.match(req, { ignoreSearch: true })));
     return;

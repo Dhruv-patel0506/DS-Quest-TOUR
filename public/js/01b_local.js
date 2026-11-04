@@ -1,6 +1,6 @@
 'use strict';
 /* =====================================================================
-   Browser mode: when there is no DS Quest server behind the page (for example the static copy hosted on Vercel),
+   Browser mode: when there is no Dhruv Patel Academy server behind the page (for example the static copy hosted on Vercel),
    accounts, progress and projects are kept in THIS browser (localStorage) and the /api/* calls are answered here.
    Not available in browser mode: pushing to git, live project pages, the AI tutor, the leaderboard of other people,
    the owner console. Everything that runs in the browser (lessons, Python, labs, games, quizzes, notebooks) works.
@@ -23,7 +23,7 @@ const LOCAL = (() => {
       (Array.isArray(p.milestones) && p.milestones.length ? 'What I built, step by step:\n' + p.milestones.slice(0, 8).map((x, i) => (i + 1) + '. ' + String(x).slice(0, 90)).join('\n') + '\n\n' : '') +
       (p.logic ? 'How it works: ' + p.logic.replace(/\s+/g, ' ').slice(0, 280) + (p.logic.length > 280 ? '...' : '') + '\n\n' : '') +
       'Built with: ' + ((p.skills || []).slice(0, 5).join(', ') || 'Python') + '.\n' + (links.site ? 'Live: ' + links.site + '\n' : '') + (links.repo ? 'Code: ' + links.repo + '\n' : '') + (u.linkedin ? 'More about me: ' + u.linkedin + '\n' : '') +
-      '\nLearning data science by building it, step by step, in DS Quest.\n\n' + tags.concat(['#DataScience', '#Python', '#BuildInPublic']).slice(0, 8).join(' ');
+      '\nLearning data science by building it, step by step, in Dhruv Patel Academy.\n\n' + tags.concat(['#DataScience', '#Python', '#BuildInPublic']).slice(0, 8).join(' ');
     return { text, url: 'https://www.linkedin.com/feed/?shareActive=true&text=' + encodeURIComponent(text), shareUrl: links.site ? 'https://www.linkedin.com/sharing/share-offsite/?url=' + encodeURIComponent(links.site) : null };
   };
   const seg = s => String(s || '').replace(/[^A-Za-z0-9_.-]/g, '').slice(0, 60);
@@ -60,9 +60,9 @@ const LOCAL = (() => {
     }
     if (route === 'POST /api/linkedin') { const pdir = seg(body.moduleId) + '-' + seg(body.variantId), p = u.projects[pdir]; if (!p) throw err('Publish the project first.', 404); return { linkedin: linkedinPost(u, Object.assign({}, p.meta || {}, body.meta || {}), p.links || {}) }; }
     if (route === 'GET /api/ship/status') return { owner: false, local: true, github: { token: false, remoteConfigured: false }, vercel: { loggedIn: false } };
-    if (route === 'POST /api/ship') throw err('One-click shipping needs the local DS Quest server (it uses your own git and Vercel logins). Here you can download your project and copy the LinkedIn post.', 501);
+    if (route === 'POST /api/ship') throw err('One-click shipping needs the local Dhruv Patel Academy server (it uses your own git and Vercel logins). Here you can download your project and copy the LinkedIn post.', 501);
     if (route === 'GET /api/llm/status') return { providers: [], ready: false };
-    if (route === 'POST /api/llm/ask') return { available: false, trail: [], hint: 'This hosted copy has no AI model attached. Run DS Quest on your own computer (node server.js) with Ollama or a free Gemini/Groq key to get the AI tutor. The built-in explanations and glossaries still work.' };
+    if (route === 'POST /api/llm/ask') return { available: false, trail: [], hint: 'This hosted copy has no AI model attached. Run Dhruv Patel Academy on your own computer (node server.js) with Ollama or a free Gemini/Groq key to get the AI tutor. The built-in explanations and glossaries still work.' };
     if (route === 'POST /api/judge' || route === 'POST /api/ask') return { available: false };
     if (route === 'GET /api/nb/key') throw err('Reporting notebook results needs the local server. The notebook checker itself works anywhere.', 501);
     throw err('Not available in browser mode', 404);

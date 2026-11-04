@@ -27,7 +27,7 @@ const DEMO = (() => {
 if (tourWanted()) API.demo = true;
 
 DSQ.tour = { on: !!API.demo };
-DSQ.startTour = () => { try { sessionStorage.setItem(TOUR_KEY, '1'); } catch (e) { } location.hash = '#/'; location.reload(); };
+DSQ.startTour = at => { try { sessionStorage.setItem(TOUR_KEY, '1'); } catch (e) { } location.hash = typeof at === 'string' && /^#\//.test(at) ? at : '#/'; location.reload(); };
 DSQ.exitTour = () => { try { sessionStorage.removeItem(TOUR_KEY); } catch (e) { } location.hash = '#/'; location.reload(); };
 
 /* the premium modules, as an excerpt */
@@ -40,6 +40,7 @@ DSQ.loadDemoModules = async function () {
 };
 
 const TOUR_STEPS = [
+  { href: '#/welcome', t: 'Every curriculum, with a tour of each', d: 'Pick a curriculum, watch an animated lesson and try a study room from every module, then decide. Packages and prices are on the same page.' },
   { href: '#/', t: 'The curriculum', d: 'Forty-two modules in nine phases, from Python to RAG, agents, diffusion models and causal inference. In the real course each one ends with an assessment and a project.' },
   { href: '#/m/rag', t: 'A module', d: 'Outcomes, lessons with time estimates, a module assessment, a project and practice notebooks. This tour shows an excerpt of each lesson.' },
   { href: '#/l/python/basics', t: 'A lesson', d: 'Short pages: reading, a diagram or 3-D view, a worked demo, an exercise, a quiz and a typing sprint. Press Continue to reach the exercise on page 3.' },

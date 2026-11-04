@@ -2,7 +2,7 @@
 /* =====================================================================
    Your own Jupyter, beside the lesson.
    The learner runs ONE command (public/dsquest_jupyter.py) which starts JupyterLab from their own Python / Anaconda
-   on 127.0.0.1 with a random token and lets only this page embed it. DS Quest then shows it in a resizable pane next to
+   on 127.0.0.1 with a random token and lets only this page embed it. Dhruv Patel Academy then shows it in a resizable pane next to
    the lesson: either the fill-in-the-blank notebook or a blank page. Answers are checked inside the notebook.
    ===================================================================== */
 const JUP = {
@@ -20,7 +20,7 @@ const JUP = {
 };
 const JUP_CMD = () => `python -c "import urllib.request as u; exec(u.urlopen('${location.origin}/dsquest_jupyter.py').read())"` + (/^https?:\/\/(127\.0\.0\.1|localhost)/.test(location.origin) ? ` --app ${location.origin}` : '') + (JUP.key ? ` --key ${JUP.key}` : '');
 
-/* When DS Quest runs on the learner's own computer (start.bat), the page can start JupyterLab itself:
+/* When Dhruv Patel Academy runs on the learner's own computer (start.bat), the page can start JupyterLab itself:
    returns null on the hosted site (there the one-line command is the way), else { el, stop } with progress and a button. */
 async function jupAutoBlock(onReady) {
   let st; try { st = await API.get('/api/jupyter/status'); } catch (e) { return null; }
@@ -43,7 +43,7 @@ async function jupAutoBlock(onReady) {
       const s = await API.get('/api/jupyter/status');
       if (s.state === 'ready' && s.url && s.token) { JUP.set({ url: s.url, token: s.token }); stop(); onReady(); return; }
       paint(s); if (s.state === 'installing' || s.state === 'starting') timer = setTimeout(poll, 1500);
-    } catch (e) { msg.textContent = 'Lost contact with DS Quest: ' + e.message; }
+    } catch (e) { msg.textContent = 'Lost contact with Dhruv Patel Academy: ' + e.message; }
   };
   btn.onclick = async () => { btn.disabled = true; try { await API.post('/api/jupyter/start', { install: !st.installed }); } catch (e) { msg.textContent = e.message; btn.disabled = false; return; } poll(); };
   wrap.append(h('b', {}, 'Jupyter is not running yet'), msg, btn, log); paint(st);
